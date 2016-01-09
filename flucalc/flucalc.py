@@ -19,6 +19,10 @@ from scipy import optimize
 #     in bacterial populations.
 #
 # Stewart, F. M. (1994). Fluctuation tests: How reliable are the estimates of mutation rates?
+#
+# Stewart, F. M., Gordon, D. M., and Levin, B. R. (1990). Fluctuation analysis:
+#     The probability distribution of the number of mutants under different conditions.
+
 
 @lru_cache(maxsize=None)
 def cultures_ratio(m, r):
@@ -92,23 +96,40 @@ def mutation_rate_limits(m, mu, c):
     return mu_lower, mu_upper
 
 
-def calc_mutation_rate(r_observed, cells_in_culture):
-    """ Calculate mutation rate (denoted by mu).
+def calc_mutation_rate(r_observed, cells_in_culture, *, z=1):
+    """ Calculate mutation rate (denoted by mu) with plating efficiency correction.
+
+    Plating efficiency correction were taken from [Steward, 1990]
 
     mu = m / (mean number of cells in culture)
     where m is a number of mutants per culture.
 
     :param r_observed: list of observed number of mutants
     :param cells_in_culture: list of cell numbers in cultures
+    :param z: fraction of a culture plated (plating efficiency); 0 < z <= 1
     :return: mu with bounds tuple: (mu, (lower_mu_bound, upper_mu_bound))
     """
-    m = m_mle_estimation(r_observed)
+    m = m_mle_estimation(r_observed) * plating_efficiency_multiplier(z)
 
     n_total = mean(cells_in_culture)
     mu = m / n_total
     limits = mutation_rate_limits(m, mu, len(r_observed))
 
     return mu, limits
+
+
+def plating_efficiency_multiplier(z):
+    """ Plating efficiency correction multiplier from [Steward, 1990].
+
+    z is the probability that any given mutant cell will generate a colony.
+
+    :param z: fraction of a culture plated (plating efficiency); 0 < z <= 1
+    :return: correction multiplier for number of mutations per culture
+    """
+    assert 0 < z <= 1
+    if z == 1:
+        return 1  # by l'Hôpital's rule
+    return (z - 1) / (z * math.log(z))
 
 
 def calc_frequency(observed_mutant_count, number_of_cells):
