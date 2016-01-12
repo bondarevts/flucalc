@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+    <form action="" method="post" name="input_data">
+        <div class="data-header">
+            {{ form.v_total.label|safe }}
+            {{ form.v_total }}
+        </div>
+
+        <div class="blocks">
+            <div class="data-block selective">
+                <p class="block-header">Selective media</p>
+
+                {{ form.c_selective.label|safe }}
+                {{ form.c_selective }}
+
+                {{ form.d_selective.label|safe }}
+                {{ form.d_selective }}
+
+                {{ form.v_selective.label|safe }}
+                {{ form.v_selective }}
+            </div>
+            <div class="separator"></div>
+            <div class="data-block complete">
+                <p class="block-header">Complete media</p>
+
+                {{ form.c_complete.label|safe }}
+                {{ form.c_complete }}
+
+                {{ form.d_complete.label|safe }}
+                {{ form.d_complete }}
+
+                {{ form.v_complete.label|safe }}
+                {{ form.v_complete }}
+            </div>
+        </div>
+        {{ form.submit }}
+    </form>
+{% endblock %}

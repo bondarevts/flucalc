@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>flucalc</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/prefixfree.min.js') }}"></script>
+</head>
+<body>
+<div class="main">
+    <header class="page-header">
+        <h1>Flucalc</h1>
+    </header>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+</body>
+</html>

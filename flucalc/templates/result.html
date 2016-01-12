@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+    <p>
+        Results:<br>
+        &#956; = {{ '{:.4e}'.format(results.mu) }} <br>
+        Bounds: {{ '({:.4f}, {:.4f})'.format(results.bounds.lower * 10 ** -power, results.bounds.upper * 10 ** -power) }} * 10<sup>{{ power }}</sup> <br>
+        Bounds: {{ '{:.4f} &lt; &#956; * 10<sup>{}</sup> &lt; {:.4f}'.format(results.bounds.lower * 10 ** -power, -power, results.bounds.upper * 10 ** -power)|safe }}<br>
+    </p>
+    <a href="/">Back</a>
+{% endblock %}
