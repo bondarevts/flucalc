@@ -25,7 +25,7 @@ from scipy import optimize
 
 
 @lru_cache(maxsize=None)
-def cultures_ratio(m, r):
+def cultures_with_mutants_ratio(m, r):
     """ Calculate proportion of cultures with `r` mutants.
     Denoted by p_r.
 
@@ -38,38 +38,23 @@ def cultures_ratio(m, r):
     if r == 0:
         return math.exp(-m)
 
-    return m / r * sum(cultures_ratio(m, i) / (r + 1 - i) for i in range(r))
-
-
-def get_start_m_approximation(r_observed):
-    """ Get good start guess point for number of mutations per culture.
-
-    Calculate start approximation of m by equation from [Lea, Coulson, 1945].
-
-    :param r_observed: list of observed number of mutants
-    :return: approximation of number of mutations per culture
-    """
-    def calc_estimation(m):
-        return abs(r_median / m - math.log(m) - 1.24)
-
-    r_median = median(r_observed)
-
-    # 0.3 is our default guess for mutants count per culture
-    return _optimize_positive_value(calc_estimation, guess=0.3)
+    return m / r * sum(cultures_with_mutants_ratio(m, i) / (r + 1 - i) for i in range(r))
 
 
 def m_mle_estimation(r_observed):
-    """ Calculate estimated value for number of mutants per culture by MSS-MLE.
-    todo расшифровка
+    """ Calculate estimated value for number of mutants per culture by MSS-MLE
+    (Ma-Sandri-Sarkar Maximum Likelihood Estimator).
+
     Likelihood function were taken from [Foster, 2006] with log transformation.
 
     :param r_observed: list of observed number of mutants
     :return: estimated value for number of mutants per culture
     """
     def min_log_likelihood(m, counts=Counter(r_observed)):
-        return -sum(counts[r] * math.log(cultures_ratio(m, r)) for r in range(max(counts) + 1))
+        return -sum(counts[r] * math.log(cultures_with_mutants_ratio(m, r))
+                    for r in range(math.ceil(max(counts)) + 1))
 
-    start_guess = get_start_m_approximation(r_observed)
+    start_guess = _get_start_m_approximation(r_observed)
     return _optimize_positive_value(min_log_likelihood, guess=start_guess)
 
 
@@ -119,7 +104,8 @@ def calc_mutation_rate(r_observed, cells_in_culture, *, z=1):
 
 
 def plating_efficiency_multiplier(z):
-    """ Plating efficiency correction multiplier from [Steward, 1990].
+    """ Plating efficiency correction multiplier for number of mutations per culture
+    from [Steward, 1990].
 
     z is the probability that any given mutant cell will generate a colony.
 
@@ -132,7 +118,7 @@ def plating_efficiency_multiplier(z):
     return (z - 1) / (z * math.log(z))
 
 
-def calc_frequency(observed_mutant_count, number_of_cells):
+def frequency(observed_mutant_count, number_of_cells):
     """ Calculate mutation fraction (or frequency) per culture.
 
     Frequency calculated as r/N.
@@ -149,6 +135,23 @@ def calc_frequency(observed_mutant_count, number_of_cells):
 def _optimize_positive_value(func, *, guess):
     """ argmin(func), where func: R+ -> R """
     return optimize.minimize(lambda x: func(x[0]), [guess], bounds=[(1e-10, None)])['x'][0]
+
+
+def _get_start_m_approximation(r_observed):
+    """ Get good start guess point for number of mutations per culture.
+
+    Calculate start approximation of m by equation from [Lea, Coulson, 1945].
+
+    :param r_observed: list of observed number of mutants
+    :return: approximation of number of mutations per culture
+    """
+    def calc_estimation(m):
+        return abs(r_median / m - math.log(m) - 1.24)
+
+    r_median = median(r_observed)
+
+    # 0.3 is our default guess for mutants count per culture
+    return _optimize_positive_value(calc_estimation, guess=0.3)
 
 
 def main():

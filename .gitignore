@@ -1,0 +1,8 @@
+# python
+__pycache__
+
+# virtualenv
+venv
+
+# PyCharm local settings
+.idea
