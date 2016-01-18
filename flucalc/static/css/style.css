@@ -20,7 +20,6 @@ header.page-header {
 }
 
 div.main {
-    width: 50%;
     padding: 40px;
     background: #333;
 }
@@ -33,18 +32,8 @@ div.content {
     color: black;
 }
 
-form {
-    width: 700px;
-}
-
 textarea {
     height: 300px;
-    padding: 5px;
-    font-size: 16px;
-    line-height: 20px;
-    background: #f5f5f5;
-    border: 1px solid #ccc;
-    border-radius: 3px;
 }
 
 textarea:focus {
@@ -54,7 +43,8 @@ textarea:focus {
 
 input[type="submit"] {
     display: block;
-    margin-left: 10px;
+    margin: auto;
+    margin-top: 10px;
     padding: 5px 20px;
     border-radius: 5px;
     font-weight: bold;
@@ -70,8 +60,16 @@ label[for="v_total"] {
 
 .data-block {
     display: inline-block;
-    padding: 25px;
+    padding: 0 25px;
     text-align: center;
+}
+
+form .data-block label {
+    margin-top: 15px;
+}
+
+form .data-block label:first-child {
+    margin-top: 0;
 }
 
 .data-block .block-header {
@@ -79,10 +77,16 @@ label[for="v_total"] {
     font-weight: bold;
 }
 
-.data-block textarea,
-.data-block input {
+textarea,
+input[type="text"] {
     width: 200px;
     max-width: 200px;
+    font-size: 16px;
+    line-height: 20px;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 5px;
 }
 
 .separator {
@@ -90,4 +94,29 @@ label[for="v_total"] {
     display: inline-block;
     top: 10%;
     bottom: 10%;
+}
+
+.result {
+    display: inline-block;
+    padding: 10px 30px;
+}
+
+.result h3 {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+
+.result table {
+    border: 1px solid #ccc;
+    border-collapse:collapse;
+}
+
+.result table td {
+    padding: 5px 10px;
+
+}
+
+.result table tr:nth-child(2n) {
+    background-color: #efefef;
 }

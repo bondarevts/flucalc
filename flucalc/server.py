@@ -1,4 +1,6 @@
-import math
+from statistics import mean
+from collections import namedtuple
+
 import flask
 from flask_wtf import Form
 from wtforms.fields import TextAreaField, SubmitField, FloatField
@@ -8,6 +10,10 @@ from . import keys
 
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
+
+
+Values = namedtuple('Values', ['m', 'mu', 'mu_interval'])
+CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
 
 
 class FluctuationInputForm(Form):
@@ -27,11 +33,8 @@ class FluctuationInputForm(Form):
 def main_page():
     form = FluctuationInputForm(csrf_enabled=False)
     if form.validate_on_submit():
-        mu, bounds = process_input(flask.request.form)
-        return flask.render_template('result.html', results={
-            'mu': mu,
-            'bounds': {'lower': bounds[0], 'upper': bounds[1]}
-        }, power=math.floor(math.log10(mu)))
+        result_data = process_input(flask.request.form)
+        return flask.render_template('result.html', results=result_data)
     return flask.render_template('input_form.html', form=form)
 
 
@@ -39,8 +42,18 @@ def process_input(form):
     v_total = float(form['v_total'])
     r_values, z_sel = parse_section_data(form, v_total, section='selective')
     n_values, z_com = parse_section_data(form, v_total, section='complete')
-    mu, bounds = flucalc.calc_mutation_rate(r_values, n_values, z=z_sel)
-    return mu, bounds
+
+    return CalcResult(
+        raw=calc_results(r_values, n_values, 1),
+        corrected=calc_results(r_values, n_values, z_sel),
+        mean_frequency=mean(flucalc.frequency(r, n) for r, n in zip(r_values, n_values))
+    )
+
+
+def calc_results(selective, complete, z):
+    m = flucalc.calc_estimated_mutants(selective, z=z)
+    mu, interval = flucalc.calc_mutation_rate(m, selective, complete)
+    return Values(m, mu, interval)
 
 
 def parse_section_data(form, v_total, *, section):

@@ -1,10 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-    <p>
-        Results:<br>
-        &#956; = {{ '{:.4e}'.format(results.mu) }} <br>
-        Bounds: {{ '({:.4f}, {:.4f})'.format(results.bounds.lower * 10 ** -power, results.bounds.upper * 10 ** -power) }} * 10<sup>{{ power }}</sup> <br>
-        Bounds: {{ '{:.4f} &lt; &#956; * 10<sup>{}</sup> &lt; {:.4f}'.format(results.bounds.lower * 10 ** -power, -power, results.bounds.upper * 10 ** -power)|safe }}<br>
-    </p>
-    <a href="/">Back</a>
+    <h2>Result</h2>
+
+    <div class="result raw">
+        <h3>Raw values</h3>
+
+        <table>
+            <tr>
+                <td>m</td>
+                <td>{{ results.raw.m|round(4) }}</td>
+            </tr>
+            <tr>
+                <td>&#956;</td>
+                <td>{{ '{:.4e}'.format(results.raw.mu) }}</td>
+            </tr>
+            <tr>
+                <td>CI<sub>lower</sub></td>
+                <td>{{ '{:.4e}'.format(results.raw.mu_interval.lower) }}</td>
+            </tr>
+            <tr>
+                <td>CI<sub>upper</sub></td>
+                <td>{{ '{:.4e}'.format(results.raw.mu_interval.upper) }}</td>
+            </tr>
+            <tr>
+                <td>Frequency mean</td>
+                <td>{{ '{:.4e}'.format(results.mean_frequency) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="result corrected">
+        <h3>Corrected values</h3>
+        <table>
+            <tr>
+                <td>m</td>
+                <td>{{ results.corrected.m|round(4) }}</td>
+            </tr>
+            <tr>
+                <td>&#956;</td>
+                <td>{{ '{:.4e}'.format(results.corrected.mu) }}</td>
+            </tr>
+            <tr>
+                <td>CI<sub>lower</sub></td>
+                <td>{{ '{:.4e}'.format(results.corrected.mu_interval.lower) }}</td>
+            </tr>
+            <tr>
+                <td>CI<sub>upper</sub></td>
+                <td>{{ '{:.4e}'.format(results.corrected.mu_interval.upper) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <p><a href="javascript:history.back()">Back</a></p>
 {% endblock %}

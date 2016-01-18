@@ -1,6 +1,7 @@
 import math
 from functools import lru_cache
 from collections import Counter
+from collections import namedtuple
 from statistics import median, mean
 
 from scipy import optimize
@@ -22,6 +23,9 @@ from scipy import optimize
 #
 # Stewart, F. M., Gordon, D. M., and Levin, B. R. (1990). Fluctuation analysis:
 #     The probability distribution of the number of mutants under different conditions.
+
+
+Interval = namedtuple('Interval', ['lower', 'upper'])
 
 
 @lru_cache(maxsize=None)
@@ -78,23 +82,32 @@ def mutation_rate_limits(m, mu, c):
 
     mu_lower = math.exp(lower - math.log(m)) * mu
     mu_upper = math.exp(upper - math.log(m)) * mu
-    return mu_lower, mu_upper
+    return Interval(mu_lower, mu_upper)
 
 
-def calc_mutation_rate(r_observed, cells_in_culture, *, z=1):
-    """ Calculate mutation rate (denoted by mu) with plating efficiency correction.
+def calc_estimated_mutants(r_observed, *, z=1):
+    """ Calculate estimated number of mutants per culture with plating efficiency correction.
 
     Plating efficiency correction were taken from [Steward, 1990]
+
+    :param r_observed: list of observed number of mutants
+    :param z: fraction of a culture plated (plating efficiency); 0 < z <= 1
+    :return: number of mutants per culture
+    """
+    return m_mle_estimation(r_observed) * plating_efficiency_multiplier(z)
+
+
+def calc_mutation_rate(m, r_observed, cells_in_culture):
+    """ Calculate mutation rate (denoted by mu) with plating efficiency correction.
 
     mu = m / (mean number of cells in culture)
     where m is a number of mutants per culture.
 
+    :param m: a number of mutants per culture
     :param r_observed: list of observed number of mutants
     :param cells_in_culture: list of cell numbers in cultures
-    :param z: fraction of a culture plated (plating efficiency); 0 < z <= 1
-    :return: mu with bounds tuple: (mu, (lower_mu_bound, upper_mu_bound))
+    :return: mu with confidence interval tuple: (mu, Interval)
     """
-    m = m_mle_estimation(r_observed) * plating_efficiency_multiplier(z)
 
     n_total = mean(cells_in_culture)
     mu = m / n_total
