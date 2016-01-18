@@ -18,13 +18,13 @@ CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
 
 class FluctuationInputForm(Form):
     v_total = FloatField('Volume of a culture <i>(&#956;l)</i>, V<sub>tot</sub>', default=200)
-    c_selective = TextAreaField('Observed numbers of clones, C<sub>sel</sub>:')
-    d_selective = FloatField('Dilution factor, D<sub>sel</sub>:')  # >= 1
-    v_selective = FloatField('Volume plated, V<sub>sel</sub>:')
+    c_selective = TextAreaField('Observed numbers of clones, C<sub>sel</sub>')
+    d_selective = FloatField('Dilution factor, D<sub>sel</sub>')  # >= 1
+    v_selective = FloatField('Volume plated, V<sub>sel</sub>')
 
-    c_complete = TextAreaField('Observed numbers of clones, C<sub>com</sub>:')
-    d_complete = FloatField('Dilution factor, D<sub>com</sub>:')  # >= 1
-    v_complete = FloatField('Volume plated, V<sub>com</sub>:')
+    c_complete = TextAreaField('Observed numbers of clones, C<sub>com</sub>')
+    d_complete = FloatField('Dilution factor, D<sub>com</sub>')  # >= 1
+    v_complete = FloatField('Volume plated, V<sub>com</sub>')
 
     submit = SubmitField("Calculate")
 
