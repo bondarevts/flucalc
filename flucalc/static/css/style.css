@@ -41,6 +41,7 @@ div.content {
 
 textarea {
     min-height: 100px;
+    resize: none;
 }
 
 textarea:focus {
@@ -73,10 +74,6 @@ label[for="v_total"] {
 
 form .data-block label {
     margin-top: 15px;
-}
-
-form .data-block label:first-child {
-    margin-top: 0;
 }
 
 .data-block .block-header {

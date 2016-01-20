@@ -9,8 +9,20 @@ var getAreaMaxHeight = function() {
     return window.innerHeight * 0.5 + 'px';
 }
 
-window.onload = window.onresize = function() {
+var updateTextareaHeight = function() {
+    var result_height = Math.max(getRowsCount(first), getRowsCount(second));
+    first.rows = second.rows = result_height + 1;
+}
+
+var setTextareaMaxHeight = function() {
     first.style["maxHeight"] = second.style["maxHeight"] = getAreaMaxHeight();
+}
+
+window.onresize = setTextareaMaxHeight;
+
+window.onload = function() {
+    setTextareaMaxHeight();
+    updateTextareaHeight();
 }
 
 first.onscroll = function() {
@@ -20,7 +32,4 @@ second.onscroll = function() {
     first.scrollTop = this.scrollTop;
 }
 
-first.onkeyup = second.onkeyup = function() {
-    var result_height = Math.max(getRowsCount(first), getRowsCount(second));
-    first.rows = second.rows = result_height + 1;
-}
+first.onkeyup = second.onkeyup = updateTextareaHeight
