@@ -23,11 +23,11 @@ class FluctuationInputForm(Form):
     v_total = FloatField('Volume of a culture <i>(&#956;l)</i>, V<sub>tot</sub>', default=200)
     c_selective = TextAreaField('Observed numbers of clones, C<sub>sel</sub>')
     d_selective = FloatField('Dilution factor, D<sub>sel</sub>')  # >= 1
-    v_selective = FloatField('Volume plated, V<sub>sel</sub>')
+    v_selective = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>sel</sub>')
 
     c_complete = TextAreaField('Observed numbers of clones, C<sub>com</sub>')
     d_complete = FloatField('Dilution factor, D<sub>com</sub>')  # >= 1
-    v_complete = FloatField('Volume plated, V<sub>com</sub>')
+    v_complete = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>com</sub>')
 
     submit = SubmitField("Calculate")
 
@@ -49,7 +49,7 @@ def process_input(form):
 
     c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.v
 
-    raw_results = calc_raw_results(selective, c_complete_to_selective)
+    raw_results = calc_raw_results(selective.c, c_complete_to_selective)
     corrected_results = calc_corrected_results(raw_results, selective, v_total)
 
     return CalcResult(
@@ -59,10 +59,10 @@ def process_input(form):
     )
 
 
-def calc_raw_results(selective, mean_complete):
-    m = flucalc.calc_estimated_mutants(selective)
+def calc_raw_results(c_selective, mean_complete):
+    m = flucalc.m_mle_estimation(c_selective)
     mu = flucalc.calc_mutation_rate(m, mean_complete)
-    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+    interval = flucalc.mutation_rate_limits(m, mu, len(c_selective))
     return Values(m, mu, interval)
 
 
