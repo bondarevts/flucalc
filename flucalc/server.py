@@ -45,33 +45,36 @@ def process_input(form):
     v_total = float(form['v_total'])
     selective = parse_media_description(form, section='selective')
     complete = parse_media_description(form, section='complete')
-    complete = complete._replace(c=mean(complete.c))
 
-    c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
+    z_sel = calc_z(selective, v_total)
+    z_com = calc_z(complete, v_total)
 
-    raw_results = calc_raw_results(selective, complete)
-    corrected_results = calc_corrected_results(raw_results, selective, v_total)
+    selective = selective._replace(c=[c / z_sel for c in selective.c])
+    complete = complete._replace(c=mean(complete.c) / z_com)
+
+    raw_results = calc_raw_results(selective.c, complete.c)
+    corrected_results = calc_corrected_results(raw_results, len(selective.c), z_sel, complete.c)
 
     return CalcResult(
         raw=raw_results,
         corrected=corrected_results,
-        mean_frequency=mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
+        mean_frequency=mean(flucalc.frequency(r, complete.c) for r in selective.c)
     )
 
 
-def calc_raw_results(selective, c_complete_to_selective):
-    m = flucalc.m_mle_estimation(selective.c)
-    mu = flucalc.calc_mutation_rate(m, c_complete_to_selective)
-    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+def calc_raw_results(c_selective, c_complete):
+    m = flucalc.m_mle_estimation(c_selective)
+    mu = flucalc.calc_mutation_rate(m, c_complete)
+    interval = flucalc.mutation_rate_limits(m, mu, len(c_selective))
     return Values(m, mu, interval)
 
 
-def calc_corrected_results(raw_results, selective, v_total):
-    z_selective = calc_z(selective, v_total)
-    plating_multiplier = flucalc.plating_efficiency_multiplier(z_selective)
+def calc_corrected_results(raw_results, count, z_sel, c_complete):
+    plating_multiplier = flucalc.plating_efficiency_multiplier(z_sel)
+
     m = raw_results.m * plating_multiplier
-    mu = raw_results.mu * plating_multiplier * z_selective
-    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+    mu = m / c_complete
+    interval = flucalc.mutation_rate_limits(m, mu, count)
     return Values(m, mu, interval)
 
 
