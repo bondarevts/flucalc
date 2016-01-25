@@ -97,23 +97,17 @@ def calc_estimated_mutants(r_observed, *, z=1):
     return m_mle_estimation(r_observed) * plating_efficiency_multiplier(z)
 
 
-def calc_mutation_rate(m, r_observed, cells_in_culture):
+def calc_mutation_rate(m, mean_cells_in_culture):
     """ Calculate mutation rate (denoted by mu) with plating efficiency correction.
 
     mu = m / (mean number of cells in culture)
     where m is a number of mutants per culture.
 
     :param m: a number of mutants per culture
-    :param r_observed: list of observed number of mutants
-    :param cells_in_culture: list of cell numbers in cultures
+    :param mean_cells_in_culture: mean number of cells in culture
     :return: mu with confidence interval tuple: (mu, Interval)
     """
-
-    n_total = mean(cells_in_culture)
-    mu = m / n_total
-    limits = mutation_rate_limits(m, mu, len(r_observed))
-
-    return mu, limits
+    return m / mean_cells_in_culture
 
 
 def plating_efficiency_multiplier(z):
@@ -165,14 +159,3 @@ def _get_start_m_approximation(r_observed):
 
     # 0.3 is our default guess for mutants count per culture
     return _optimize_positive_value(calc_estimation, guess=0.3)
-
-
-def main():
-    observed_mutant_counts = [22, 16, 44, 39, 26, 36, 35, 19, 26, 25, 35, 33]
-    print('m = ', m_mle_estimation(observed_mutant_counts))
-    mu, (lower, upper) = calc_mutation_rate(observed_mutant_counts, [1.2e8])
-    print('mu = {}, {} < mu < {} (* 10^8)'.format(mu * 1e8, lower * 1e8, upper * 1e8))
-
-
-if __name__ == '__main__':
-    main()

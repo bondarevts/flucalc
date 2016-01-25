@@ -12,6 +12,9 @@ app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
 
 
+MediaDescription = namedtuple('MediaDescription', ['c', 'd', 'v'])
+
+
 Values = namedtuple('Values', ['m', 'mu', 'mu_interval'])
 CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
 
@@ -40,32 +43,56 @@ def main_page():
 
 def process_input(form):
     v_total = float(form['v_total'])
-    r_values, z_sel = parse_section_data(form, v_total, section='selective')
-    n_values, z_com = parse_section_data(form, v_total, section='complete')
+    selective = parse_media_description(form, section='selective')
+    complete = parse_media_description(form, section='complete')
+    complete = complete._replace(c=mean(complete.c))
+
+    c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.v
+
+    raw_results = calc_raw_results(selective, c_complete_to_selective)
+    corrected_results = calc_corrected_results(raw_results, selective, v_total)
 
     return CalcResult(
-        raw=calc_results(r_values, n_values, 1),
-        corrected=calc_results(r_values, n_values, z_sel),
-        mean_frequency=mean(flucalc.frequency(r, n) for r, n in zip(r_values, n_values))
+        raw=raw_results,
+        corrected=corrected_results,
+        mean_frequency=mean(flucalc.frequency(r, complete.c) for r in selective.c)
     )
+
+
+def calc_raw_results(selective, mean_complete):
+    m = flucalc.calc_estimated_mutants(selective)
+    mu = flucalc.calc_mutation_rate(m, mean_complete)
+    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+    return Values(m, mu, interval)
+
+
+def calc_corrected_results(raw_results, selective, v_total):
+    z_selective = calc_z(selective.d, selective.v, v_total)
+    plating_multiplier = flucalc.plating_efficiency_multiplier(z_selective)
+    m = raw_results.m * plating_multiplier
+    mu = raw_results.mu * plating_multiplier * z_selective
+    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+    return Values(m, mu, interval)
 
 
 def calc_results(selective, complete, z):
     m = flucalc.calc_estimated_mutants(selective, z=z)
-    mu, interval = flucalc.calc_mutation_rate(m, selective, complete)
+    mu, interval = flucalc.calc_mutation_rate(m, complete)
     return Values(m, mu, interval)
 
 
-def parse_section_data(form, v_total, *, section):
-    """ Extract from the form expected number of clones and plating efficiency
+def calc_z(d, v, v_total):
+    return v / d / v_total
+
+
+def parse_media_description(form, *, section):
+    """ Extract media description values from the form.
     :param form: `FluctuationInputForm` object
     :param section: ``'complete'`` or ``'selective'``
-    :param v_total: float, volume of a culture
-    :return: list of expected number of clones with plating efficiency in selected section
-    :rtype: (list of float, float)
+    :return: `MediaDescription` value
     """
-    d = float(form['d_' + section])
-    v = float(form['v_' + section])
-    z = v / d / v_total
-    expected_c = [float(row) / z for row in form['c_' + section].split()]
-    return expected_c, z
+    return MediaDescription(
+            c=[float(row) for row in form['c_' + section].split()],
+            d=float(form['d_' + section]),
+            v=float(form['v_' + section])
+    )
