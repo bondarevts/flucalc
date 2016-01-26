@@ -4,6 +4,7 @@ from collections import namedtuple
 import flask
 from flask_wtf import Form
 from wtforms.fields import TextAreaField, SubmitField, FloatField
+from wtforms import validators, ValidationError
 
 from . import flucalc
 from . import keys
@@ -19,15 +20,39 @@ Values = namedtuple('Values', ['m', 'mu', 'mu_interval'])
 CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
 
 
-class FluctuationInputForm(Form):
-    v_total = FloatField('Volume of a culture <i>(&#956;l)</i>, V<sub>tot</sub>', default=200)
-    c_selective = TextAreaField('Observed numbers of clones, C<sub>sel</sub>')
-    d_selective = FloatField('Dilution factor, D<sub>sel</sub>')  # >= 1
-    v_selective = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>sel</sub>')
+def volume_validator(_, field):
+    if field.data is not None and float(field.data) <= 0:
+        raise ValidationError('Non positive volume')
 
-    c_complete = TextAreaField('Observed numbers of clones, C<sub>com</sub>')
-    d_complete = FloatField('Dilution factor, D<sub>com</sub>')  # >= 1
-    v_complete = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>com</sub>')
+
+def clones_validator(_, field):
+    assert field.data
+    clones = []
+    for clone in field.data.split():
+        try:
+            value = float(clone)
+        except ValueError:
+            raise ValidationError('Not a valid float value: "{}"'.format(clone))
+        clones.append(value)
+    if any(clone < 0 for clone in clones):
+        raise ValidationError('Negative number of clones')
+
+
+dilution_validator = validators.NumberRange(min=1, message='Must be &#8805; 1')
+
+
+class FluctuationInputForm(Form):
+    v_total = FloatField('Volume of a culture <i>(&#956;l)</i>, V<sub>tot</sub>',
+                         [volume_validator], default=200)
+    c_selective = TextAreaField('Observed numbers of clones, C<sub>sel</sub>',
+                                [validators.DataRequired(), clones_validator])
+    d_selective = FloatField('Dilution factor, D<sub>sel</sub>', [dilution_validator])
+    v_selective = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>sel</sub>', [volume_validator])
+
+    c_complete = TextAreaField('Observed numbers of clones, C<sub>com</sub>',
+                               [validators.DataRequired(), clones_validator])
+    d_complete = FloatField('Dilution factor, D<sub>com</sub>', [dilution_validator])
+    v_complete = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>com</sub>', [volume_validator])
 
     submit = SubmitField("Calculate")
 
@@ -35,9 +60,23 @@ class FluctuationInputForm(Form):
 @app.route('/', methods=['GET', 'POST'])
 def main_page():
     form = FluctuationInputForm(csrf_enabled=False)
-    if form.validate_on_submit():
+    if not form.is_submitted():
+        return flask.render_template('input_form.html', form=form)
+
+    if form.validate():
         result_data = process_input(flask.request.form)
         return flask.render_template('result.html', results=result_data)
+
+    for field in form:
+        try:
+            # extract field symbol
+            field_name = field.label.text.rsplit(',', 1)[1].strip()
+        except IndexError:
+            field_name = field.label.text
+        if field.errors:
+            message = '; '.join(error.lower().rstrip('.') for error in field.errors)
+            flask.flash(flask.Markup('<code>{}:</code> {}'.format(field_name, message)))
+
     return flask.render_template('input_form.html', form=form)
 
 

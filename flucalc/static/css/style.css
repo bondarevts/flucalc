@@ -123,3 +123,21 @@ input[type="text"] {
 .result table tr:nth-child(2n) {
     background-color: #efefef;
 }
+
+.flashes_block {
+    background-color: #FFB8C6;
+    border-radius: 10px;
+    padding: 15px 30px;
+    margin-top: 20px;
+    font-face:
+}
+
+.flashes_block ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.flashes_block ul li {
+    margin-top: 5px;
+}
