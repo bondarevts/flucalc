@@ -28,11 +28,14 @@ def volume_validator(_, field):
 def clones_validator(_, field):
     assert field.data
     clones = []
-    for clone in field.data.split():
+    for pos, clone in enumerate(field.data.split(), 1):
         try:
             value = float(clone)
         except ValueError:
-            raise ValidationError('Not a valid float value: "{}"'.format(clone))
+            if len(clone) > 5:
+                clone = clone[:5] + '...'
+            message = 'Value #{} is not a valid float: "{}"'.format(pos, clone)
+            raise ValidationError(message)
         clones.append(value)
     if any(clone < 0 for clone in clones):
         raise ValidationError('Negative number of clones')
