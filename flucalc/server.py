@@ -9,6 +9,8 @@ from wtforms import validators, ValidationError
 from . import flucalc
 from . import keys
 
+version = '0.1.0'
+
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
 
@@ -88,17 +90,18 @@ class FluctuationInputForm(Form):
 def main_page():
     form = FluctuationInputForm(flask.request.form, csrf_enabled=False)
     if not form.is_submitted():
-        return flask.render_template('form_with_results.html', form=form)
+        return flask.render_template('form_with_results.html', form=form, version=version)
 
     if form.validate():
         result_data = process_input(form)
-        return flask.render_template('form_with_results.html', form=form, results=result_data)
+        return flask.render_template('form_with_results.html', form=form, results=result_data,
+                                     version=version)
 
     for error in get_errors(form):
         message = '<code>{error.field_name}:</code> {error.message}'.format(error=error)
         flask.flash(flask.Markup(message))
 
-    return flask.render_template('form_with_results.html', form=form)
+    return flask.render_template('form_with_results.html', form=form, version=version)
 
 
 def get_errors(form):
