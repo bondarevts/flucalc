@@ -13,17 +13,8 @@
     </header>
     <div class="content">
         {% block content %}{% endblock %}
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="flashes_block">
-                    <ul class=flashes>
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        {% endwith %}
+        {% block errors %}{% endblock %}
+        {% block results %}{% endblock %}
     </div>
 </div>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

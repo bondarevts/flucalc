@@ -88,17 +88,17 @@ class FluctuationInputForm(Form):
 def main_page():
     form = FluctuationInputForm(flask.request.form, csrf_enabled=False)
     if not form.is_submitted():
-        return flask.render_template('input_form.html', form=form)
+        return flask.render_template('form_with_results.html', form=form)
 
     if form.validate():
         result_data = process_input(form)
-        return flask.render_template('result.html', results=result_data)
+        return flask.render_template('form_with_results.html', form=form, results=result_data)
 
     for error in get_errors(form):
         message = '<code>{error.field_name}:</code> {error.message}'.format(error=error)
         flask.flash(flask.Markup(message))
 
-    return flask.render_template('input_form.html', form=form)
+    return flask.render_template('form_with_results.html', form=form)
 
 
 def get_errors(form):

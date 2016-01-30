@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+    <form action="" method="post" name="input_data">
+        <div class="data-header">
+            {{ form.v_total.label|safe }}
+            {{ form.v_total }}
+        </div>
+
+        <div class="blocks">
+            <div class="data-block selective">
+                <p class="block-header">Selective media</p>
+
+                {{ form.c_selective.label|safe }}
+                {{ form.c_selective }}
+
+                {{ form.d_selective.label|safe }}
+                {{ form.d_selective }}
+
+                {{ form.v_selective.label|safe }}
+                {{ form.v_selective }}
+            </div>
+            <div class="separator"></div>
+            <div class="data-block complete">
+                <p class="block-header">Complete media</p>
+
+                {{ form.c_complete.label|safe }}
+                {{ form.c_complete }}
+
+                {{ form.d_complete.label|safe }}
+                {{ form.d_complete }}
+
+                {{ form.v_complete.label|safe }}
+                {{ form.v_complete }}
+            </div>
+            {{ form.submit }}
+        </div>
+    </form>
+{% endblock %}
+{% block errors %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flashes_block">
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endblock %}
+{% block results %}
+    {% if results %}
+        <h2>Results</h2>
+
+        <div class="result raw">
+            <h3>Raw values</h3>
+
+            <table>
+                <tr>
+                    <td>m</td>
+                    <td>{{ results.raw.m|round(4) }}</td>
+                </tr>
+                <tr>
+                    <td>&#956;</td>
+                    <td>{{ '{:.4e}'.format(results.raw.mu) }}</td>
+                </tr>
+                <tr>
+                    <td>CI<sub>lower</sub></td>
+                    <td>{{ '{:.4e}'.format(results.raw.mu_interval.lower) }}</td>
+                </tr>
+                <tr>
+                    <td>CI<sub>upper</sub></td>
+                    <td>{{ '{:.4e}'.format(results.raw.mu_interval.upper) }}</td>
+                </tr>
+                <tr>
+                    <td>Frequency mean</td>
+                    <td>{{ '{:.4e}'.format(results.mean_frequency) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="result corrected">
+            <h3>Corrected values</h3>
+            <table>
+                <tr>
+                    <td>m</td>
+                    <td>{{ results.corrected.m|round(4) }}</td>
+                </tr>
+                <tr>
+                    <td>&#956;</td>
+                    <td>{{ '{:.4e}'.format(results.corrected.mu) }}</td>
+                </tr>
+                <tr>
+                    <td>CI<sub>lower</sub></td>
+                    <td>{{ '{:.4e}'.format(results.corrected.mu_interval.lower) }}</td>
+                </tr>
+                <tr>
+                    <td>CI<sub>upper</sub></td>
+                    <td>{{ '{:.4e}'.format(results.corrected.mu_interval.upper) }}</td>
+                </tr>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}
