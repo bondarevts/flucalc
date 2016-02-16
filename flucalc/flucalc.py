@@ -28,7 +28,7 @@ from scipy import optimize
 Interval = namedtuple('Interval', ['lower', 'upper'])
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=10000)
 def cultures_with_mutants_ratio(m, r):
     """ Calculate proportion of cultures with `r` mutants.
     Denoted by p_r.
