@@ -1,5 +1,6 @@
 from statistics import mean
 from collections import namedtuple
+from functools import partial
 
 import flask
 from flask_wtf import Form
@@ -9,7 +10,7 @@ from wtforms import validators, ValidationError
 from . import flucalc
 from . import keys
 
-version = '0.1.0'
+version = '0.1.1'
 
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
@@ -22,6 +23,8 @@ MediaDescription = namedtuple('MediaDescription', ['c', 'd', 'v'])
 
 Values = namedtuple('Values', ['m', 'mu', 'mu_interval'])
 CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
+
+CalcStep = namedtuple('CalcStep', ['pos', 'description', 'value', 'img'])
 
 
 def volume_value(_, field):
@@ -71,17 +74,17 @@ class MultiFloatAreaField(TextAreaField):
 
 
 class FluctuationInputForm(Form):
-    v_total = FloatField('Volume of a culture <i>(&#956;l)</i>, V<sub>tot</sub>',
+    v_total = FloatField('Volume of a culture <i>(&mu;l)</i>, V<sub>tot</sub>',
                          [volume_value], default=200)
     c_selective = MultiFloatAreaField('Observed numbers of clones, C<sub>sel</sub>',
                                       [clones_numbers, int_values])
     d_selective = FloatField('Dilution factor, D<sub>sel</sub>', [dilution_validator])
-    v_selective = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>sel</sub>', [volume_value])
+    v_selective = FloatField('Volume plated <i>(&mu;l)</i>, V<sub>sel</sub>', [volume_value])
 
     c_complete = MultiFloatAreaField('Observed numbers of clones, C<sub>com</sub>',
                                      [clones_numbers])
     d_complete = FloatField('Dilution factor, D<sub>com</sub>', [dilution_validator])
-    v_complete = FloatField('Volume plated <i>(&#956;l)</i>, V<sub>com</sub>', [volume_value])
+    v_complete = FloatField('Volume plated <i>(&mu;l)</i>, V<sub>com</sub>', [volume_value])
 
     submit = SubmitField("Calculate")
 
@@ -89,19 +92,20 @@ class FluctuationInputForm(Form):
 @app.route('/', methods=['GET', 'POST'])
 def main_page():
     form = FluctuationInputForm(flask.request.form, csrf_enabled=False)
+    render_page_template = partial(flask.render_template,
+                                   'form_with_results.html', form=form, version=version)
     if not form.is_submitted():
-        return flask.render_template('form_with_results.html', form=form, version=version)
+        return render_page_template()
 
     if form.validate():
-        result_data = process_input(form)
-        return flask.render_template('form_with_results.html', form=form, results=result_data,
-                                     version=version)
+        solution = Solver(form)
+        return render_page_template(results=solution.result_data, process=solution.calc_steps)
 
     for error in get_errors(form):
         message = '<code>{error.field_name}:</code> {error.message}'.format(error=error)
         flask.flash(flask.Markup(message))
 
-    return flask.render_template('form_with_results.html', form=form, version=version)
+    return render_page_template()
 
 
 def get_errors(form):
@@ -116,46 +120,91 @@ def get_errors(form):
             yield FieldError(field_name, message)
 
 
-def process_input(form):
-    v_total = form.v_total.data
-    selective = MediaDescription(
-        c=form.c_selective.data,
-        d=form.d_selective.data,
-        v=form.v_selective.data
-    )
-    complete = MediaDescription(
-        c=mean(form.c_complete.data),
-        d=form.d_complete.data,
-        v=form.v_complete.data
-    )
+class Solver:
+    def __init__(self, form):
+        self._form = form
+        self._result = None
+        self._steps = []
 
-    c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
+    @property
+    def result_data(self):
+        if not self._result:
+            self._process_input()
+        return self._result
 
-    raw_results = calc_raw_results(selective, c_complete_to_selective)
-    corrected_results = calc_corrected_results(raw_results, selective, v_total)
+    @property
+    def calc_steps(self):
+        if not self._steps:
+            self._process_input()
+        return self._steps
 
-    return CalcResult(
-        raw=raw_results,
-        corrected=corrected_results,
-        mean_frequency=mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
-    )
+    def _add_step(self, position, description, value, img=None):
+        self._steps.append(CalcStep(position, description, value, img))
 
+    def _process_input(self):
+        v_total = self._form.v_total.data
+        selective = MediaDescription(
+            c=self._form.c_selective.data,
+            d=self._form.d_selective.data,
+            v=self._form.v_selective.data
+        )
+        complete = MediaDescription(
+            c=mean(self._form.c_complete.data),
+            d=self._form.d_complete.data,
+            v=self._form.v_complete.data
+        )
 
-def calc_raw_results(selective, c_complete_to_selective):
-    m = flucalc.m_mle_estimation(selective.c)
-    mu = flucalc.calc_mutation_rate(m, c_complete_to_selective)
-    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
-    return Values(m, mu, interval)
+        self._add_step(2, 'Mean of C<sub>com</sub>', complete.c, 'mean_c_com')
+        c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
+        self._add_step(3, 'C<sub>com</sub> adjusted to selective media', c_complete_to_selective,
+                       'c_com_sel')
 
+        raw_results = self._calc_raw_results(selective, c_complete_to_selective)
+        corrected_results = self._calc_corrected_results(raw_results, selective, v_total)
 
-def calc_corrected_results(raw_results, selective, v_total):
-    z_selective = calc_z(selective, v_total)
-    plating_multiplier = flucalc.plating_efficiency_multiplier(z_selective)
-    m = raw_results.m * plating_multiplier
-    mu = raw_results.mu * plating_multiplier * z_selective
-    interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
-    return Values(m, mu, interval)
+        frequency = mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
+        self._add_step(13, 'Mean frequency, <span style="border-top:1px solid black">f</span>',
+                       frequency, 'frequency')
+        self._result = CalcResult(
+            raw=raw_results,
+            corrected=corrected_results,
+            mean_frequency=frequency
+        )
+        self._steps.sort()
 
+    def _calc_raw_results(self, selective, c_complete_to_selective):
+        m = flucalc.m_mle_estimation(selective.c)
+        self._add_step(1, 'Number of mutations, m', m, 'm_raw')
+        mu = flucalc.calc_mutation_rate(m, c_complete_to_selective)
+        self._add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')
+        interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+        self._add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>',
+                       interval.lower, 'mu_raw_lower')
+        self._add_step(6, 'Upper limit for mutation rate, &mu;<sup>+</sup>',
+                       interval.upper, 'mu_raw_upper')
+        return Values(m, mu, interval)
 
-def calc_z(media_description, v_total):
-    return media_description.v / media_description.d / v_total
+    def _calc_corrected_results(self, raw_results, selective, v_total):
+        z_selective = self._calc_z(selective, v_total)
+        self._add_step(7, 'Fraction of a culture plated on selective media, z<sub>sel</sub>',
+                       z_selective, 'z_sel')
+        plating_multiplier = flucalc.plating_efficiency_multiplier(z_selective)
+        self._add_step(8, 'Plating efficiency multiplier, &#969;', plating_multiplier,
+                       'plating_efficiency')
+        m = raw_results.m * plating_multiplier
+        self._add_step(9, 'Corrected number of mutations, m<sub>&#969;</sub>', m, 'm_corr')
+        mu = raw_results.mu * plating_multiplier * z_selective
+        self._add_step(10, 'Corrected mutation rate, &mu;<sub>&#969;</sub>', mu, 'mu_corr')
+        interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+        self._add_step(11, 'Corrected lower limit for mutation rate, '
+                           '&mu;<span style="position: relative;"><sub>&omega;</sub>'
+                           '<sup style="position: absolute; left: 0;">&#8722;</sup><span>',
+                       interval.lower, 'mu_corr_lower')
+        self._add_step(12, 'Corrected upper limit for mutation rate, '
+                           '&mu;<span style="position: relative;"><sub>&omega;</sub>'
+                           '<sup style="position: absolute; left: 0;">+</sup><span>',
+                       interval.upper, 'mu_corr_upper')
+        return Values(m, mu, interval)
+
+    def _calc_z(self, media_description, v_total):
+        return media_description.v / media_description.d / v_total

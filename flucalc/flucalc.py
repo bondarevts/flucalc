@@ -2,7 +2,7 @@ import math
 from functools import lru_cache
 from collections import Counter
 from collections import namedtuple
-from statistics import median, mean
+from statistics import median
 
 from scipy import optimize
 
