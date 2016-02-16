@@ -1,3 +1,4 @@
+import math
 from statistics import mean
 from collections import namedtuple
 from functools import partial
@@ -10,7 +11,7 @@ from wtforms import validators, ValidationError
 from . import flucalc
 from . import keys
 
-version = '0.1.2'
+version = '0.1.3'
 
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
@@ -21,7 +22,7 @@ FieldError = namedtuple('FieldError', ['field_name', 'message'])
 MediaDescription = namedtuple('MediaDescription', ['c', 'd', 'v'])
 
 
-Values = namedtuple('Values', ['m', 'mu', 'mu_interval'])
+Values = namedtuple('Values', ['m', 'mu', 'mu_interval', 'power'])
 CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
 
 CalcStep = namedtuple('CalcStep', ['pos', 'description', 'value', 'img'])
@@ -93,7 +94,9 @@ class FluctuationInputForm(Form):
 def main_page():
     form = FluctuationInputForm(flask.request.form, csrf_enabled=False)
     render_page_template = partial(flask.render_template,
-                                   'form_with_results.html', form=form, version=version)
+                                   'form_with_results.html',
+                                   format_number_with_power=format_number_with_power,
+                                   form=form, version=version)
     if not form.is_submitted():
         return render_page_template()
 
@@ -118,6 +121,14 @@ def get_errors(form):
         if field.errors:
             message = '; '.join(error.lower().rstrip('.') for error in field.errors)
             yield FieldError(field_name, message)
+
+
+def _calc_min_power(*values):
+    return int(min(math.floor(math.log10(value)) for value in values))
+
+
+def format_number_with_power(number, power, precision=4):
+    return '{0:.{1}f}e{2:+03d}'.format(number / pow(10, power), precision, power)
 
 
 class Solver:
@@ -182,7 +193,7 @@ class Solver:
                        interval.lower, 'mu_raw_lower')
         self._add_step(6, 'Upper limit for mutation rate, &mu;<sup>+</sup>',
                        interval.upper, 'mu_raw_upper')
-        return Values(m, mu, interval)
+        return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
     def _calc_corrected_results(self, raw_results, selective, v_total):
         z_selective = self._calc_z(selective, v_total)
@@ -204,7 +215,7 @@ class Solver:
                            '&mu;<span style="position: relative;"><sub>&omega;</sub>'
                            '<sup style="position: absolute; left: 0;">+</sup><span>',
                        interval.upper, 'mu_corr_upper')
-        return Values(m, mu, interval)
+        return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
     def _calc_z(self, media_description, v_total):
         return media_description.v / media_description.d / v_total

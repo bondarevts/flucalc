@@ -62,16 +62,16 @@
                     <td>{{ results.raw.m|round(4) }}</td>
                 </tr>
                 <tr>
-                    <td>&#956;</td>
-                    <td>{{ '{:.4e}'.format(results.raw.mu) }}</td>
+                    <td>&mu;</td>
+                    <td>{{ format_number_with_power(results.raw.mu, results.raw.power) }}</td>
                 </tr>
                 <tr>
                     <td>CI<sub>lower</sub></td>
-                    <td>{{ '{:.4e}'.format(results.raw.mu_interval.lower) }}</td>
+                    <td>{{ format_number_with_power(results.raw.mu_interval.lower, results.raw.power) }}</td>
                 </tr>
                 <tr>
                     <td>CI<sub>upper</sub></td>
-                    <td>{{ '{:.4e}'.format(results.raw.mu_interval.upper) }}</td>
+                    <td>{{ format_number_with_power(results.raw.mu_interval.upper, results.raw.power) }}</td>
                 </tr>
                 <tr>
                     <td>Frequency mean</td>
@@ -88,16 +88,16 @@
                     <td>{{ results.corrected.m|round(4) }}</td>
                 </tr>
                 <tr>
-                    <td>&#956;</td>
-                    <td>{{ '{:.4e}'.format(results.corrected.mu) }}</td>
+                    <td>&mu;</td>
+                    <td>{{ format_number_with_power(results.corrected.mu, results.corrected.power) }}</td>
                 </tr>
                 <tr>
                     <td>CI<sub>lower</sub></td>
-                    <td>{{ '{:.4e}'.format(results.corrected.mu_interval.lower) }}</td>
+                    <td>{{ format_number_with_power(results.corrected.mu_interval.lower, results.corrected.power) }}</td>
                 </tr>
                 <tr>
                     <td>CI<sub>upper</sub></td>
-                    <td>{{ '{:.4e}'.format(results.corrected.mu_interval.upper) }}</td>
+                    <td>{{ format_number_with_power(results.corrected.mu_interval.upper, results.corrected.power) }}</td>
                 </tr>
             </table>
         </div>
