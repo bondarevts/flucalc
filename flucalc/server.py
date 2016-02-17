@@ -11,7 +11,7 @@ from wtforms import validators, ValidationError
 from . import flucalc
 from . import keys
 
-version = '0.1.3'
+version = '0.1.4'
 
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
@@ -150,7 +150,7 @@ class Solver:
         return self._steps
 
     def _add_step(self, position, description, value, img=None):
-        self._steps.append(CalcStep(position, description, value, img))
+        self._steps.append(CalcStep(position, description, float(value), img))
 
     def _process_input(self):
         v_total = self._form.v_total.data
