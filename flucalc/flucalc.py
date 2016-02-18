@@ -1,5 +1,4 @@
 import math
-from functools import lru_cache
 from collections import Counter
 from collections import namedtuple
 from statistics import median
@@ -28,9 +27,8 @@ from scipy import optimize
 Interval = namedtuple('Interval', ['lower', 'upper'])
 
 
-@lru_cache(maxsize=10000)
-def cultures_with_mutants_ratio(m, r):
-    """ Calculate proportion of cultures with `r` mutants.
+def cultures_with_mutants_ratio(m):
+    """ Returns function p(r) for calculation proportion of cultures with `r` mutants with given m.
     Denoted by p_r.
 
     Recursive algorithm were taken from [Sarkar et al., 1992].
@@ -39,10 +37,18 @@ def cultures_with_mutants_ratio(m, r):
     :param r: observed number of mutants in a culture
     :return: p_r for given m; 0 <= p_r <= 1
     """
-    if r == 0:
-        return math.exp(-m)
+    cache = []
 
-    return m / r * sum(cultures_with_mutants_ratio(m, i) / (r + 1 - i) for i in range(r))
+    def p(target_r):
+        if not cache:
+            cache.append(math.exp(-m))
+
+        if len(cache) <= target_r:
+            for r in range(len(cache), target_r + 1):
+                cache.append(m / r * sum(cache[i] / (r + 1 - i) for i in range(r)))
+
+        return cache[target_r]
+    return p
 
 
 def m_mle_estimation(r_observed):
@@ -55,8 +61,10 @@ def m_mle_estimation(r_observed):
     :return: estimated value for number of mutants per culture
     """
     def min_log_likelihood(m, counts=Counter(r_observed)):
-        return -sum(counts[r] * math.log(cultures_with_mutants_ratio(m, r))
-                    for r in range(math.ceil(max(counts)) + 1))
+        p = cultures_with_mutants_ratio(m)
+        return -sum(counts[r] * math.log(p(r))
+                    for r in range(math.ceil(max(counts)) + 1)
+                    if counts[r] != 0)
 
     start_guess = _get_start_m_approximation(r_observed)
     return _optimize_positive_value(min_log_likelihood, guess=start_guess)
@@ -158,4 +166,4 @@ def _get_start_m_approximation(r_observed):
     r_median = median(r_observed)
 
     # 0.3 is our default guess for mutants count per culture
-    return _optimize_positive_value(calc_estimation, guess=0.3)
+    return min(_optimize_positive_value(calc_estimation, guess=0.3), 500)
