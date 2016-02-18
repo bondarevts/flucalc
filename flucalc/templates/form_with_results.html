@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
+    <p class="file-download-offer">
+        Enter data below or select a file with data: <input type="file" id="file-with-data">
+    </p>
     <form action="" method="post" name="input_data">
         <div class="data-header">
             {{ form.v_total.label|safe }}
@@ -32,15 +35,20 @@
                 {{ form.v_complete.label|safe }}
                 {{ form.v_complete }}
             </div>
-            {{ form.submit }}
+            <div class="controls">
+                <div class="inner">
+                    {{ form.submit(class_="button") }}
+                    <input type="button" id="save-to-file" value="Download input data" class="button">
+                </div>
+            </div>
         </div>
     </form>
 {% endblock %}
 {% block errors %}
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="flashes_block">
-                <ul class=flashes>
+            <div class="errors_block">
+                <ul class=errors>
                 {% for message in messages %}
                     <li>{{ message }}</li>
                 {% endfor %}
@@ -50,70 +58,72 @@
     {% endwith %}
 {% endblock %}
 {% block results %}
-    {% if results %}
-        <h2>Results</h2>
+    <div class="results">
+        {% if results %}
+            <h2>Results</h2>
 
-        <div class="result raw">
-            <h3>Raw values</h3>
+            <div class="result raw">
+                <h3>Raw values</h3>
 
-            <table>
-                <tr>
-                    <td>m</td>
-                    <td>{{ results.raw.m|round(4) }}</td>
-                </tr>
-                <tr>
-                    <td>&mu;</td>
-                    <td>{{ format_number_with_power(results.raw.mu, results.raw.power) }}</td>
-                </tr>
-                <tr>
-                    <td>CI<sub>lower</sub></td>
-                    <td>{{ format_number_with_power(results.raw.mu_interval.lower, results.raw.power) }}</td>
-                </tr>
-                <tr>
-                    <td>CI<sub>upper</sub></td>
-                    <td>{{ format_number_with_power(results.raw.mu_interval.upper, results.raw.power) }}</td>
-                </tr>
-                <tr>
-                    <td>Frequency mean</td>
-                    <td>{{ '{:.4e}'.format(results.mean_frequency) }}</td>
-                </tr>
-            </table>
-        </div>
+                <table>
+                    <tr>
+                        <td>m</td>
+                        <td>{{ results.raw.m|round(4) }}</td>
+                    </tr>
+                    <tr>
+                        <td>&mu;</td>
+                        <td>{{ format_number_with_power(results.raw.mu, results.raw.power) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CI<sub>lower</sub></td>
+                        <td>{{ format_number_with_power(results.raw.mu_interval.lower, results.raw.power) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CI<sub>upper</sub></td>
+                        <td>{{ format_number_with_power(results.raw.mu_interval.upper, results.raw.power) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Frequency mean</td>
+                        <td>{{ '{:.4e}'.format(results.mean_frequency) }}</td>
+                    </tr>
+                </table>
+            </div>
 
-        <div class="result corrected">
-            <h3>Corrected values</h3>
-            <table>
-                <tr>
-                    <td>m</td>
-                    <td>{{ results.corrected.m|round(4) }}</td>
-                </tr>
-                <tr>
-                    <td>&mu;</td>
-                    <td>{{ format_number_with_power(results.corrected.mu, results.corrected.power) }}</td>
-                </tr>
-                <tr>
-                    <td>CI<sub>lower</sub></td>
-                    <td>{{ format_number_with_power(results.corrected.mu_interval.lower, results.corrected.power) }}</td>
-                </tr>
-                <tr>
-                    <td>CI<sub>upper</sub></td>
-                    <td>{{ format_number_with_power(results.corrected.mu_interval.upper, results.corrected.power) }}</td>
-                </tr>
-            </table>
-        </div>
-    {% endif %}
-    {% if process %}
-        <div class="process-steps">
-            <ul>
-                {% for item in process %}
-                    <li class="step">
-                        <p>{{ item.description|safe }} = {{ '{:.4}'.format(item.value) }}</p>
-                        {% if item.img %}
-                            <p><img src="{{ url_for('static', filename='imgs/' + item.img + '.svg') }}"/></p>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
+            <div class="result corrected">
+                <h3>Corrected values</h3>
+                <table>
+                    <tr>
+                        <td>m</td>
+                        <td>{{ results.corrected.m|round(4) }}</td>
+                    </tr>
+                    <tr>
+                        <td>&mu;</td>
+                        <td>{{ format_number_with_power(results.corrected.mu, results.corrected.power) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CI<sub>lower</sub></td>
+                        <td>{{ format_number_with_power(results.corrected.mu_interval.lower, results.corrected.power) }}</td>
+                    </tr>
+                    <tr>
+                        <td>CI<sub>upper</sub></td>
+                        <td>{{ format_number_with_power(results.corrected.mu_interval.upper, results.corrected.power) }}</td>
+                    </tr>
+                </table>
+            </div>
+        {% endif %}
+        {% if process %}
+            <div class="process-steps">
+                <ul>
+                    {% for item in process %}
+                        <li class="step">
+                            <p>{{ item.description|safe }} = {{ '{:.4}'.format(item.value) }}</p>
+                            {% if item.img %}
+                                <p><img src="{{ url_for('static', filename='imgs/' + item.img + '.svg') }}"/></p>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}

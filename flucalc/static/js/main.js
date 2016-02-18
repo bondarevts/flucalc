@@ -1,5 +1,5 @@
-var first = document.getElementById("c_selective");
-var second = document.getElementById("c_complete");
+var c_sel = document.getElementById("c_selective");
+var c_com = document.getElementById("c_complete");
 
 var getRowsCount = function(area) {
     return area.value.split(/[\n\r]/).length;
@@ -10,12 +10,12 @@ var getAreaMaxHeight = function() {
 }
 
 var updateTextareaHeight = function() {
-    var result_height = Math.max(getRowsCount(first), getRowsCount(second));
-    first.rows = second.rows = result_height + 1;
+    var result_height = Math.max(getRowsCount(c_sel), getRowsCount(c_com));
+    c_sel.rows = c_com.rows = result_height + 1;
 }
 
 var setTextareaMaxHeight = function() {
-    first.style["maxHeight"] = second.style["maxHeight"] = getAreaMaxHeight();
+    c_sel.style["maxHeight"] = c_com.style["maxHeight"] = getAreaMaxHeight();
 }
 
 window.onresize = setTextareaMaxHeight;
@@ -25,11 +25,11 @@ window.onload = function() {
     updateTextareaHeight();
 }
 
-first.onscroll = function() {
-    second.scrollTop = this.scrollTop;
+c_sel.onscroll = function() {
+    c_com.scrollTop = this.scrollTop;
 }
-second.onscroll = function() {
-    first.scrollTop = this.scrollTop;
+c_com.onscroll = function() {
+    c_sel.scrollTop = this.scrollTop;
 }
 
-first.onkeyup = second.onkeyup = updateTextareaHeight
+c_sel.onkeyup = c_com.onkeyup = updateTextareaHeight

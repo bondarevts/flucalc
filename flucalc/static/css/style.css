@@ -26,6 +26,11 @@ header h1 {
     margin-bottom: 0;
 }
 
+.file-download-offer {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
 div.main {
     padding: 0 40px 40px 40px;
     background: #333;
@@ -49,10 +54,17 @@ textarea:focus {
     outline:none;
 }
 
-input[type="submit"] {
-    display: block;
-    margin: auto;
+.controls {
     margin-top: 10px;
+}
+
+.controls > div.inner {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.button {
     padding: 5px 20px;
     border-radius: 5px;
     font-weight: bold;
@@ -124,7 +136,7 @@ input[type="text"] {
     background-color: #efefef;
 }
 
-.flashes_block {
+.errors_block {
     background-color: #FFB8C6;
     border-radius: 10px;
     padding: 15px 30px;
@@ -132,13 +144,13 @@ input[type="text"] {
     font-face:
 }
 
-.flashes_block ul {
+.errors_block ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
 }
 
-.flashes_block ul li {
+.errors_block ul li {
     margin-top: 5px;
 }
 

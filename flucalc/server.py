@@ -12,7 +12,7 @@ from wtforms import validators, ValidationError
 from . import flucalc
 from . import keys
 
-version = '0.2.1'
+version = '0.2.2'
 
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
