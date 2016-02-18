@@ -1,6 +1,9 @@
 # server keys file
 flucalc/keys.py
 
+# log file
+flucalc.log
+
 # python
 __pycache__
 

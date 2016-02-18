@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 import sys
 from flucalc.server import app
 
@@ -17,6 +18,12 @@ def main():
             if arg.isdigit():
                 port = int(arg)
     debug = '--debug' in sys.argv
+
+    logging_level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(filename='flucalc.log', level=logging_level,
+                        format='%(asctime)s:%(levelname)s:%(name)s:%(message)s')
+    logging.info('Start server. ip=%s, port=%s.%s', ip, port, ' Debug mode' if debug else '')
+
     app.run(host=ip, port=port, debug=debug)
 
 

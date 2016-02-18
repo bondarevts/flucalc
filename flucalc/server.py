@@ -1,4 +1,5 @@
 import math
+import logging
 from statistics import mean
 from collections import namedtuple
 from functools import partial
@@ -45,7 +46,7 @@ def int_values(_, field):
             raise ValidationError('Number must be integer')
 
 
-dilution_validator = validators.NumberRange(min=1, message='Must be &#8805; 1')
+dilution_validator = validators.NumberRange(min=1, message='Must be &ge; 1')
 
 
 # noinspection PyAttributeOutsideInit
@@ -89,9 +90,19 @@ class FluctuationInputForm(Form):
 
     submit = SubmitField("Calculate")
 
+    def __repr__(self):
+        c_sel = ';'.join(self.c_selective.raw_data[0].split())
+        c_com = ';'.join(self.c_complete.raw_data[0].split())
+        return 'V_tot={}|C_sel={}|D_sel={}|V_sel={}|C_com={}|D_com={}|V_com={}'.format(
+            self.v_total.raw_data[0],
+            c_sel, self.d_selective.raw_data[0], self.v_selective.raw_data[0],
+            c_com, self.d_complete.raw_data[0], self.v_complete.raw_data[0]
+        )
+
 
 @app.route('/', methods=['GET', 'POST'])
 def main_page():
+    logging.info('Request from ip %s.', flask.request.remote_addr)
     form = FluctuationInputForm(flask.request.form, csrf_enabled=False)
     render_page_template = partial(flask.render_template,
                                    'form_with_results.html',
@@ -100,12 +111,16 @@ def main_page():
     if not form.is_submitted():
         return render_page_template()
 
+    logging.info('Form submitted: %s', form)
+
     if form.validate():
+        logging.info('Form validated')
         solution = Solver(form)
         return render_page_template(results=solution.result_data, process=solution.calc_steps)
 
     for error in get_errors(form):
         message = '<code>{error.field_name}:</code> {error.message}'.format(error=error)
+        logging.info('Form error. %s: %s', error.field_name, error.message)
         flask.flash(flask.Markup(message))
 
     return render_page_template()
@@ -153,6 +168,7 @@ class Solver:
         self._steps.append(CalcStep(position, description, float(value), img))
 
     def _process_input(self):
+        logging.info('Start calculation')
         v_total = self._form.v_total.data
         selective = MediaDescription(
             c=self._form.c_selective.data,
@@ -170,9 +186,13 @@ class Solver:
         self._add_step(3, 'C<sub>com</sub> adjusted to selective media', c_complete_to_selective,
                        'c_com_sel')
 
+        logging.info('Raw results calculation')
         raw_results = self._calc_raw_results(selective, c_complete_to_selective)
+
+        logging.info('Corrected results calculation')
         corrected_results = self._calc_corrected_results(raw_results, selective, v_total)
 
+        logging.info('Frequency calculation')
         frequency = mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
         self._add_step(13, 'Mean frequency, <span style="border-top:1px solid black">f</span>',
                        frequency, 'frequency')
@@ -186,13 +206,16 @@ class Solver:
     def _calc_raw_results(self, selective, c_complete_to_selective):
         m = flucalc.m_mle_estimation(selective.c)
         self._add_step(1, 'Number of mutations, m', m, 'm_raw')
+
         mu = flucalc.calc_mutation_rate(m, c_complete_to_selective)
         self._add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')
+
         interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
         self._add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>',
                        interval.lower, 'mu_raw_lower')
         self._add_step(6, 'Upper limit for mutation rate, &mu;<sup>+</sup>',
                        interval.upper, 'mu_raw_upper')
+
         return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
     def _calc_corrected_results(self, raw_results, selective, v_total):
@@ -200,16 +223,16 @@ class Solver:
         self._add_step(7, 'Fraction of a culture plated on selective media, z<sub>sel</sub>',
                        z_selective, 'z_sel')
         plating_multiplier = flucalc.plating_efficiency_multiplier(z_selective)
-        self._add_step(8, 'Plating efficiency multiplier, &#969;', plating_multiplier,
+        self._add_step(8, 'Plating efficiency multiplier, &omega;', plating_multiplier,
                        'plating_efficiency')
         m = raw_results.m * plating_multiplier
-        self._add_step(9, 'Corrected number of mutations, m<sub>&#969;</sub>', m, 'm_corr')
+        self._add_step(9, 'Corrected number of mutations, m<sub>&omega;</sub>', m, 'm_corr')
         mu = raw_results.mu * plating_multiplier * z_selective
-        self._add_step(10, 'Corrected mutation rate, &mu;<sub>&#969;</sub>', mu, 'mu_corr')
+        self._add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')
         interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
         self._add_step(11, 'Corrected lower limit for mutation rate, '
                            '&mu;<span style="position: relative;"><sub>&omega;</sub>'
-                           '<sup style="position: absolute; left: 0;">&#8722;</sup><span>',
+                           '<sup style="position: absolute; left: 0;">&minus;</sup><span>',
                        interval.lower, 'mu_corr_lower')
         self._add_step(12, 'Corrected upper limit for mutation rate, '
                            '&mu;<span style="position: relative;"><sub>&omega;</sub>'

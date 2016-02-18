@@ -1,4 +1,5 @@
 import math
+import logging
 from collections import Counter
 from collections import namedtuple
 from statistics import median
@@ -22,6 +23,9 @@ from scipy import optimize
 #
 # Stewart, F. M., Gordon, D. M., and Levin, B. R. (1990). Fluctuation analysis:
 #     The probability distribution of the number of mutants under different conditions.
+
+
+logger = logging.getLogger(__name__)
 
 
 Interval = namedtuple('Interval', ['lower', 'upper'])
@@ -61,6 +65,7 @@ def m_mle_estimation(r_observed):
     :return: estimated value for number of mutants per culture
     """
     def min_log_likelihood(m, counts=Counter(r_observed)):
+        logger.info('Estimated m: %s', m)
         p = cultures_with_mutants_ratio(m)
         return -sum(counts[r] * math.log(p(r))
                     for r in range(math.ceil(max(counts)) + 1)
