@@ -1,18 +1,25 @@
-import math
 import logging
-from statistics import mean
+import math
+import multiprocessing as mp
 from collections import namedtuple
 from functools import partial
+from statistics import mean
 
 import flask
 from flask_wtf import Form
-from wtforms.fields import TextAreaField, SubmitField, FloatField
 from wtforms import validators, ValidationError
+from wtforms.fields import TextAreaField, SubmitField, FloatField
 
 from . import flucalc
 from . import keys
 
-version = '0.2.2'
+version = '2016.5.1'
+code_address = 'https://github.com/bondarevts/flucalc'
+new_issue_address = code_address + '/issues/new'
+
+logging_level = logging.INFO
+logging.basicConfig(filename='flucalc.log', level=logging_level,
+                    format='%(asctime)s:%(levelname)s:%(name)s:%(message)s')
 
 app = flask.Flask(__name__)
 app.secret_key = keys.secret_key
@@ -27,6 +34,8 @@ Values = namedtuple('Values', ['m', 'mu', 'mu_interval', 'power'])
 CalcResult = namedtuple('CalcResult', ['raw', 'corrected', 'mean_frequency'])
 
 CalcStep = namedtuple('CalcStep', ['pos', 'description', 'value', 'img'])
+
+ProcessingResult = namedtuple('ProcessingResult', ['values', 'steps'])
 
 
 def volume_value(_, field):
@@ -115,8 +124,31 @@ def main_page():
 
     if form.validate():
         logging.info('Form validated')
-        solution = Solver(form)
-        return render_page_template(results=solution.result_data, process=solution.calc_steps)
+        v_total = form.v_total.data
+        selective = MediaDescription(
+            c=form.c_selective.data,
+            d=form.d_selective.data,
+            v=form.v_selective.data
+        )
+        complete = MediaDescription(
+            c=mean(form.c_complete.data),
+            d=form.d_complete.data,
+            v=form.v_complete.data
+        )
+        try:
+            result = run_parallel(solve, args=(v_total, selective, complete), timeout=5)
+        except mp.TimeoutError:
+            message = 'Calculation failed. Possible C<sub>sel</sub> too big.'
+            logging.info(message)
+            flask.flash(flask.Markup(message))
+            return render_page_template()
+        except Exception:
+            message = ('Calculation failed. '
+                       'If it is repeated please <a href="{}">create an issue</a>.'.format(new_issue_address))
+            logging.exception(message)
+            flask.flash(flask.Markup(message))
+            return render_page_template()
+        return render_page_template(results=result.values, process=result.steps)
 
     for error in get_errors(form):
         message = '<code>{error.field_name}:</code> {error.message}'.format(error=error)
@@ -146,99 +178,101 @@ def format_number_with_power(number, power, precision=4):
     return '{0:.{1}f}e{2:+03d}'.format(number / pow(10, power), precision, power)
 
 
-class Solver:
-    def __init__(self, form):
-        self._form = form
-        self._result = None
-        self._steps = []
+def apply_function_to_pipe(func, args, kwargs, pipe):
+    try:
+        pipe.send(func(*args, **kwargs))
+    except Exception:
+        logging.exception('Processing error')
 
-    @property
-    def result_data(self):
-        if not self._result:
-            self._process_input()
-        return self._result
 
-    @property
-    def calc_steps(self):
-        if not self._steps:
-            self._process_input()
-        return self._steps
+def run_parallel(func, args=(), kwargs=None, timeout=None):
+    if kwargs is None:
+        kwargs = {}
 
-    def _add_step(self, position, description, value, img=None):
-        self._steps.append(CalcStep(position, description, float(value), img))
+    ctx = mp.get_context('spawn')
+    out_pipe, in_pipe = ctx.Pipe(duplex=False)
+    process = ctx.Process(target=apply_function_to_pipe, args=(func, args, kwargs, in_pipe))
+    process.daemon = True
+    process.start()
+    logging.info('Process started')
+    logging.info('Run calculation in process %s', process.pid)
+    process.join(timeout=timeout)
+    if not process.is_alive():
+        logging.info('Calculation finished')
+        return out_pipe.recv()
 
-    def _process_input(self):
-        logging.info('Start calculation')
-        v_total = self._form.v_total.data
-        selective = MediaDescription(
-            c=self._form.c_selective.data,
-            d=self._form.d_selective.data,
-            v=self._form.v_selective.data
-        )
-        complete = MediaDescription(
-            c=mean(self._form.c_complete.data),
-            d=self._form.d_complete.data,
-            v=self._form.v_complete.data
-        )
+    logging.info('Try to terminate process')
+    process.terminate()
+    process.terminate()
+    logging.info('Calculation terminated by timeout')
+    raise mp.TimeoutError
 
-        self._add_step(2, 'Mean of C<sub>com</sub>', complete.c, 'mean_c_com')
-        c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
-        self._add_step(3, 'C<sub>com</sub> adjusted to selective media', c_complete_to_selective,
-                       'c_com_sel')
 
-        logging.info('Raw results calculation')
-        raw_results = self._calc_raw_results(selective, c_complete_to_selective)
-
-        logging.info('Corrected results calculation')
-        corrected_results = self._calc_corrected_results(raw_results, selective, v_total)
-
-        logging.info('Frequency calculation')
-        frequency = mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
-        self._add_step(13, 'Mean frequency, <span style="border-top:1px solid black">f</span>',
-                       frequency, 'frequency')
-        self._result = CalcResult(
-            raw=raw_results,
-            corrected=corrected_results,
-            mean_frequency=frequency
-        )
-        self._steps.sort()
-
-    def _calc_raw_results(self, selective, c_complete_to_selective):
+def solve(v_total, selective, complete):
+    def calc_raw_results():
         m = flucalc.m_mle_estimation(selective.c)
-        self._add_step(1, 'Number of mutations, m', m, 'm_raw')
+        add_step(1, 'Number of mutations, m', m, 'm_raw')
 
         mu = flucalc.calc_mutation_rate(m, c_complete_to_selective)
-        self._add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')
+        add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')
 
         interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
-        self._add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>',
-                       interval.lower, 'mu_raw_lower')
-        self._add_step(6, 'Upper limit for mutation rate, &mu;<sup>+</sup>',
-                       interval.upper, 'mu_raw_upper')
+        add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>', interval.lower, 'mu_raw_lower')
+        add_step(6, 'Upper limit for mutation rate, &mu;<sup>+</sup>', interval.upper, 'mu_raw_upper')
 
         return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
-    def _calc_corrected_results(self, raw_results, selective, v_total):
-        z_selective = self._calc_z(selective, v_total)
-        self._add_step(7, 'Fraction of a culture plated on selective media, z<sub>sel</sub>',
-                       z_selective, 'z_sel')
+    def calc_corrected_results(raw):
+        z_selective = calc_z(selective)
+        add_step(7, 'Fraction of a culture plated on selective media, z<sub>sel</sub>', z_selective, 'z_sel')
+
         plating_multiplier = flucalc.plating_efficiency_multiplier(z_selective)
-        self._add_step(8, 'Plating efficiency multiplier, &omega;', plating_multiplier,
-                       'plating_efficiency')
-        m = raw_results.m * plating_multiplier
-        self._add_step(9, 'Corrected number of mutations, m<sub>&omega;</sub>', m, 'm_corr')
-        mu = raw_results.mu * plating_multiplier * z_selective
-        self._add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')
+        add_step(8, 'Plating efficiency multiplier, &omega;', plating_multiplier, 'plating_efficiency')
+
+        m = raw.m * plating_multiplier
+        add_step(9, 'Corrected number of mutations, m<sub>&omega;</sub>', m, 'm_corr')
+
+        mu = raw.mu * plating_multiplier * z_selective
+        add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')
+
         interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
-        self._add_step(11, 'Corrected lower limit for mutation rate, '
-                           '&mu;<span style="position: relative;"><sub>&omega;</sub>'
-                           '<sup style="position: absolute; left: 0;">&minus;</sup><span>',
-                       interval.lower, 'mu_corr_lower')
-        self._add_step(12, 'Corrected upper limit for mutation rate, '
-                           '&mu;<span style="position: relative;"><sub>&omega;</sub>'
-                           '<sup style="position: absolute; left: 0;">+</sup><span>',
-                       interval.upper, 'mu_corr_upper')
+        add_step(11, 'Corrected lower limit for mutation rate, '
+                     '&mu;<span style="position: relative;"><sub>&omega;</sub>'
+                     '<sup style="position: absolute; left: 0;">&minus;</sup><span>',
+                 interval.lower, 'mu_corr_lower')
+        add_step(12, 'Corrected upper limit for mutation rate, '
+                     '&mu;<span style="position: relative;"><sub>&omega;</sub>'
+                     '<sup style="position: absolute; left: 0;">+</sup><span>',
+                 interval.upper, 'mu_corr_upper')
         return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
-    def _calc_z(self, media_description, v_total):
+    def calc_z(media_description):
         return media_description.v / media_description.d / v_total
+
+    def add_step(position, description, value, img=None):
+        steps.append(CalcStep(position, description, float(value), img))
+
+    steps = []
+    logging.info('Start calculation')
+
+    add_step(2, 'Mean of C<sub>com</sub>', complete.c, 'mean_c_com')
+    c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
+    add_step(3, 'C<sub>com</sub> adjusted to selective media', c_complete_to_selective, 'c_com_sel')
+
+    logging.info('Raw results calculation')
+    raw_results = calc_raw_results()
+
+    logging.info('Corrected results calculation')
+    corrected_results = calc_corrected_results(raw_results)
+
+    logging.info('Frequency calculation')
+    frequency = mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
+    add_step(13, 'Mean frequency, <span style="border-top:1px solid black">f</span>', frequency, 'frequency')
+    steps.sort()
+
+    result = CalcResult(
+        raw=raw_results,
+        corrected=corrected_results,
+        mean_frequency=frequency
+    )
+    return ProcessingResult(steps=steps, values=result)
