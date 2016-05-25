@@ -15,4 +15,8 @@ MSS-MLE (Ma-Sandri-Sarkar Maximum Likelihood Estimator) calculator for Luria–D
 
         gunicorn -w 4 -b <ip>:<port> flucalc.server:app
         
+  Or you can use run_server.py script:
+       
+      ./run_server.py <ip>:<port>
+        
 6. For shutdown server press Ctrl + C in the terminal.
