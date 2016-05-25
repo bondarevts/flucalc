@@ -40,6 +40,7 @@
                 <div class="inner">
                     {{ form.submit(class_="button") }}
                     <input type="button" id="save-to-file" value="Download input data" class="button">
+                    <input type="submit" name="calc-freq" id="calc-freq" value="Calculate frequencies" class="button">
                 </div>
             </div>
         </div>
@@ -58,9 +59,26 @@
         {% endif %}
     {% endwith %}
 {% endblock %}
+{% block frequencies %}
+    {% if frequencies %}
+        <div class="results">
+            <h2>Frequencies</h2>
+
+            <div class="result">
+                <table>
+                    {% for frequency in frequencies %}
+                        <tr>
+                            <td>{{ frequency }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
 {% block results %}
-    <div class="results">
-        {% if results %}
+    {% if results %}
+        <div class="results">
             <h2>Results</h2>
 
             <div class="result raw">
@@ -111,20 +129,20 @@
                     </tr>
                 </table>
             </div>
-        {% endif %}
-        {% if process %}
-            <div class="process-steps">
-                <ul>
-                    {% for item in process %}
-                        <li class="step">
-                            <p>{{ item.description|safe }} = {{ '{:.4}'.format(item.value) }}</p>
-                            {% if item.img %}
-                                <p><img src="{{ url_for('static', filename='imgs/' + item.img + '.svg') }}"/></p>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-    </div>
+            {% if process %}
+                <div class="process-steps">
+                    <ul>
+                        {% for item in process %}
+                            <li class="step">
+                                <p>{{ item.description|safe }} = {{ '{:.4}'.format(item.value) }}</p>
+                                {% if item.img %}
+                                    <p><img src="{{ url_for('static', filename='imgs/' + item.img + '.svg') }}"/></p>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
 {% endblock %}

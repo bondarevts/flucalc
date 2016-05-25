@@ -1,4 +1,4 @@
-# flucalc
+# FluCalc
 MSS-MLE (Ma-Sandri-Sarkar Maximum Likelihood Estimator) calculator for Luria–Delbrück fluctuation analysis.
 
 ## Installation
@@ -11,11 +11,11 @@ MSS-MLE (Ma-Sandri-Sarkar Maximum Likelihood Estimator) calculator for Luria–D
 
 3. Create file keys.py in the root of source code from template keys.py.template. Change the secret key string. You can use any random sequence for it.
 4. Change dir to the root of source code. 
-5. Start the server for flucalc:
+5. Start the server for FluCalc:
 
         gunicorn -w 4 -b <ip>:<port> flucalc.server:app
         
-  Or you can use run_server.py script:
+  Or you can use run_server.py script as alternative way to start the server:
        
       ./run_server.py <ip>:<port>
         

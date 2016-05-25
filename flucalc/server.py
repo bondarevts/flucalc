@@ -4,6 +4,7 @@ import multiprocessing as mp
 from collections import namedtuple
 from functools import partial
 from statistics import mean
+import itertools
 
 import flask
 from flask_wtf import Form
@@ -97,7 +98,7 @@ class FluctuationInputForm(Form):
     d_complete = FloatField('Dilution factor, D<sub>com</sub>', [dilution_validator])
     v_complete = FloatField('Volume plated <i>(&mu;l)</i>, V<sub>com</sub>', [volume_value])
 
-    submit = SubmitField("Calculate")
+    submit = SubmitField('Calculate')
 
     def __repr__(self):
         c_sel = ';'.join(self.c_selective.raw_data[0].split())
@@ -131,10 +132,21 @@ def main_page():
             v=form.v_selective.data
         )
         complete = MediaDescription(
-            c=mean(form.c_complete.data),
+            c=form.c_complete.data,
             d=form.d_complete.data,
             v=form.v_complete.data
         )
+
+        if 'calc-freq' in flask.request.form:
+            if len(selective.c) != len(complete.c):
+                complete = complete._replace(c=[mean(complete.c)])
+                message = 'Frequency was calculated using mean of C<sub>com</sub>'
+                flask.flash(flask.Markup(message))
+            frequencies = calc_frequencies(selective, complete)
+            return render_page_template(frequencies=frequencies)
+
+        complete = complete._replace(c=mean(complete.c))
+
         try:
             result = run_parallel(solve, args=(v_total, selective, complete), timeout=5)
         except mp.TimeoutError:
@@ -176,6 +188,11 @@ def _calc_min_power(*values):
 
 def format_number_with_power(number, power, precision=4):
     return '{0:.{1}f}e{2:+03d}'.format(number / pow(10, power), precision, power)
+
+
+def calc_frequencies(selective, complete):
+    return [flucalc.frequency(c_sel, c_com * selective.v * complete.d / complete.v / selective.d)
+            for c_sel, c_com in zip(selective.c, itertools.cycle(complete.c))]
 
 
 def apply_function_to_pipe(func, args, kwargs, pipe):

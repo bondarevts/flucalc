@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>flucalc</title>
+    <title>FluCalc</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="{{ url_for('static', filename='js/prefixfree.min.js') }}"></script>
@@ -9,7 +9,7 @@
 <body>
 <div class="main">
     <header class="page-header">
-        <h1>Flucalc</h1>
+        <h1>FluCalc</h1>
         {% if version %}
             <p class="version">Version: {{ version }}</p>
         {% endif %}
@@ -17,6 +17,7 @@
     <div class="content">
         {% block content %}{% endblock %}
         {% block errors %}{% endblock %}
+        {% block frequencies %}{% endblock %}
         {% block results %}{% endblock %}
     </div>
 </div>
