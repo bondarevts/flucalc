@@ -7,8 +7,8 @@ MSS-MLE (Ma-Sandri-Sarkar Maximum Likelihood Estimator) calculator for Luria–D
   * gunicorn=19.1
   * flask=0.10
   * flask-wtf=0.11
-  * scipy=0.17
-  * numpy=1.10
+  * scipy=0.17.1
+  * numpy=1.11
 
 3. Create file keys.py in the root of source code from template keys.py.template. Change the secret key string. You can use any random sequence for it.
 4. Change dir to the root of source code. 
