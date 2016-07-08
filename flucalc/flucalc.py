@@ -75,27 +75,19 @@ def m_mle_estimation(r_observed):
     return _optimize_positive_value(min_log_likelihood, guess=start_guess)
 
 
-def mutation_rate_limits(m, mu, c):
-    """ 95% confidence interval bounds estimation for mutation rate.
-
-    Estimation of bounds calculated from equation from [Stewart, 1994]
-
+def mutation_rate_limits(m, c, n_total):
+    """ [Foster 2006]
     :param c: count of cultures; denoted by C
-    :param mu: mutation rate: probability of mutation per cell per division or generation
     :param m: number of mutations per culture
+    :param n_total: total number of cells in culture
     """
-    def ci_lower_estimation(value):
-        return abs(value - math.log(m) + 2.401 * math.exp(-0.315 * value) / math.sqrt(c))
 
-    def ci_upper_estimation(value):
-        return abs(value - math.log(m) - 2.401 * math.exp(-0.315 * value) / math.sqrt(c))
+    sigma = 1.225 * m ** (-0.315) / c ** 0.5
 
-    lower = _optimize_positive_value(ci_lower_estimation, guess=1)
-    upper = _optimize_positive_value(ci_upper_estimation, guess=1)
+    lower = math.exp(math.log(m) - 1.96 * sigma * math.exp(1.96 * sigma) ** 0.315)
+    upper = math.exp(math.log(m) + 1.96 * sigma * math.exp(1.96 * sigma) ** (-0.315))
 
-    mu_lower = math.exp(lower - math.log(m)) * mu
-    mu_upper = math.exp(upper - math.log(m)) * mu
-    return Interval(mu_lower, mu_upper)
+    return Interval(lower / n_total, upper / n_total)
 
 
 def calc_estimated_mutants(r_observed, *, z=1):

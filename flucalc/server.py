@@ -14,7 +14,7 @@ from wtforms.fields import TextAreaField, SubmitField, FloatField
 from . import flucalc
 from . import keys
 
-version = '2016.7.1'
+version = '2016.7.2'
 code_address = 'https://github.com/bondarevts/flucalc'
 new_issue_address = code_address + '/issues/new'
 
@@ -233,7 +233,7 @@ def solve(v_total, selective, complete):
         mu = flucalc.calc_mutation_rate(m, n_total)
         add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')   # Todo: change formula
 
-        interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+        interval = flucalc.mutation_rate_limits(m, len(selective.c), n_total)
         add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>', interval.lower, 'mu_raw_lower')
         add_step(6, 'Upper limit for mutation rate, &mu;<sup>+</sup>', interval.upper, 'mu_raw_upper')
 
@@ -252,7 +252,7 @@ def solve(v_total, selective, complete):
         mu = flucalc.calc_mutation_rate(m, n_total)
         add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')  # todo: change formula
 
-        interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
+        interval = flucalc.mutation_rate_limits(m, len(selective.c), n_total)
         add_step(11, 'Corrected lower limit for mutation rate, '
                      '&mu;<span style="position: relative;"><sub>&omega;</sub>'
                      '<sup style="position: absolute; left: 0;">&minus;</sup><span>',
