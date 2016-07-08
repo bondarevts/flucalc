@@ -14,7 +14,7 @@ from wtforms.fields import TextAreaField, SubmitField, FloatField
 from . import flucalc
 from . import keys
 
-version = '2016.5.1'
+version = '2016.7.1'
 code_address = 'https://github.com/bondarevts/flucalc'
 new_issue_address = code_address + '/issues/new'
 
@@ -230,8 +230,8 @@ def solve(v_total, selective, complete):
         m = flucalc.m_mle_estimation(selective.c)
         add_step(1, 'Number of mutations, m', m, 'm_raw')
 
-        mu = flucalc.calc_mutation_rate(m, c_complete_to_selective)
-        add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')
+        mu = flucalc.calc_mutation_rate(m, n_total)
+        add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')   # Todo: change formula
 
         interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
         add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>', interval.lower, 'mu_raw_lower')
@@ -249,8 +249,8 @@ def solve(v_total, selective, complete):
         m = raw.m * plating_multiplier
         add_step(9, 'Corrected number of mutations, m<sub>&omega;</sub>', m, 'm_corr')
 
-        mu = raw.mu * plating_multiplier * z_selective
-        add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')
+        mu = flucalc.calc_mutation_rate(m, n_total)
+        add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')  # todo: change formula
 
         interval = flucalc.mutation_rate_limits(m, mu, len(selective.c))
         add_step(11, 'Corrected lower limit for mutation rate, '
@@ -273,8 +273,9 @@ def solve(v_total, selective, complete):
     logging.info('Start calculation')
 
     add_step(2, 'Mean of C<sub>com</sub>', complete.c, 'mean_c_com')
-    c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
-    add_step(3, 'C<sub>com</sub> adjusted to selective media', c_complete_to_selective, 'c_com_sel')
+
+    n_total = complete.c * complete.d * v_total / complete.v
+    add_step(3, 'Total number of cells in culture, N<sub>tot</sub>', n_total, 'n_total')   # todo: add formula
 
     logging.info('Raw results calculation')
     raw_results = calc_raw_results()
@@ -283,8 +284,12 @@ def solve(v_total, selective, complete):
     corrected_results = calc_corrected_results(raw_results)
 
     logging.info('Frequency calculation')
+
+    c_complete_to_selective = complete.c * selective.v * complete.d / complete.v / selective.d
+    add_step(13, 'C<sub>com</sub> adjusted to selective media', c_complete_to_selective, 'c_com_sel')
+
     frequency = mean(flucalc.frequency(r, c_complete_to_selective) for r in selective.c)
-    add_step(13, 'Mean frequency, <span style="border-top:1px solid black">f</span>', frequency, 'frequency')
+    add_step(14, 'Mean frequency, <span style="border-top:1px solid black">f</span>', frequency, 'frequency')
     steps.sort()
 
     result = CalcResult(

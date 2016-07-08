@@ -1,6 +1,6 @@
-import urllib.request
-import urllib.parse
 import os.path
+import urllib.parse
+from urllib.request import urlopen
 
 imgs_source_path = 'source'
 out_base_path = '../flucalc/static/imgs'
@@ -12,5 +12,5 @@ for filename in os.listdir(imgs_source_path):
     out_path = os.path.join(out_base_path, out_filename + '.svg')
     with open(os.path.join(imgs_source_path, filename)) as source_file, open(out_path, 'wb') as out:
         request_url = request_base_path + urllib.parse.quote(source_file.read())
-        out.write(urllib.request.urlopen(request_url).read())
+        out.write(urlopen(request_url).read())
     print('end')
