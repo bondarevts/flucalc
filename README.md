@@ -1,4 +1,4 @@
-# FluCalc
+# [FluCalc](http://flucalc.ase.tufts.edu/)
 MSS-MLE (Ma-Sandri-Sarkar Maximum Likelihood Estimator) calculator for Luria–Delbrück fluctuation analysis.
 
 ## Installation
