@@ -1,10 +1,11 @@
+import itertools
 import logging
 import math
 import multiprocessing as mp
 from collections import namedtuple
 from functools import partial
 from statistics import mean
-import itertools
+from typing import List
 
 import flask
 from flask_wtf import Form
@@ -39,7 +40,7 @@ CalcStep = namedtuple('CalcStep', ['pos', 'description', 'value', 'img'])
 ProcessingResult = namedtuple('ProcessingResult', ['values', 'steps'])
 
 
-def volume_value(_, field):
+def volume_value(_, field: FloatField):
     if field.data is not None and float(field.data) <= 0:
         raise ValidationError('Non positive volume')
 
@@ -147,6 +148,7 @@ def main_page():
 
         complete = complete._replace(c=mean(complete.c))
 
+        # noinspection PyBroadException
         try:
             result = run_parallel(solve, args=(v_total, selective, complete), timeout=5)
         except mp.TimeoutError:
@@ -196,6 +198,7 @@ def calc_frequencies(selective, complete):
 
 
 def apply_function_to_pipe(func, args, kwargs, pipe):
+    # noinspection PyBroadException
     try:
         pipe.send(func(*args, **kwargs))
     except Exception:
@@ -225,8 +228,8 @@ def run_parallel(func, args=(), kwargs=None, timeout=None):
     raise mp.TimeoutError
 
 
-def solve(v_total, selective, complete):
-    def calc_raw_results():
+def solve(v_total, selective: MediaDescription, complete: MediaDescription) -> ProcessingResult:
+    def calc_raw_results() -> Values:
         m = flucalc.m_mle_estimation(selective.c)
         add_step(1, 'Number of mutations, m', m, 'm_raw')
 
@@ -239,7 +242,7 @@ def solve(v_total, selective, complete):
 
         return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
-    def calc_corrected_results(raw):
+    def calc_corrected_results(raw: Values) -> Values:
         z_selective = calc_z(selective)
         add_step(7, 'Fraction of a culture plated on selective media, z<sub>sel</sub>', z_selective, 'z_sel')
 
@@ -263,13 +266,13 @@ def solve(v_total, selective, complete):
                  interval.upper, 'mu_corr_upper')
         return Values(m, mu, interval, _calc_min_power(mu, *interval))
 
-    def calc_z(media_description):
+    def calc_z(media_description: MediaDescription) -> float:
         return media_description.v / media_description.d / v_total
 
-    def add_step(position, description, value, img=None):
+    def add_step(position: int, description: str, value: float, img: str = None):
         steps.append(CalcStep(position, description, float(value), img))
 
-    steps = []
+    steps = []  # type: List[CalcStep]
     logging.info('Start calculation')
 
     add_step(2, 'Mean of C<sub>com</sub>', complete.c, 'mean_c_com')
