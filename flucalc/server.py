@@ -15,7 +15,7 @@ from wtforms.fields import TextAreaField, SubmitField, FloatField
 from . import flucalc
 from . import keys
 
-version = '2016.7.2'
+version = '2017.9.1'
 code_address = 'https://github.com/bondarevts/flucalc'
 new_issue_address = code_address + '/issues/new'
 
@@ -234,7 +234,7 @@ def solve(v_total, selective: MediaDescription, complete: MediaDescription) -> P
         add_step(1, 'Number of mutations, m', m, 'm_raw')
 
         mu = flucalc.calc_mutation_rate(m, n_total)
-        add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')   # Todo: change formula
+        add_step(4, 'Mutation rate, &mu;', mu, 'mu_raw')
 
         interval = flucalc.mutation_rate_limits(m, len(selective.c), n_total)
         add_step(5, 'Lower limit for mutation rate, &mu;<sup>&minus;</sup>', interval.lower, 'mu_raw_lower')
@@ -253,9 +253,12 @@ def solve(v_total, selective: MediaDescription, complete: MediaDescription) -> P
         add_step(9, 'Corrected number of mutations, m<sub>&omega;</sub>', m, 'm_corr')
 
         mu = flucalc.calc_mutation_rate(m, n_total)
-        add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')  # todo: change formula
+        add_step(10, 'Corrected mutation rate, &mu;<sub>&omega;</sub>', mu, 'mu_corr')
 
-        interval = flucalc.mutation_rate_limits(m, len(selective.c), n_total)
+        interval = flucalc.Interval(
+            lower=raw.mu_interval.lower * plating_multiplier,
+            upper=raw.mu_interval.upper * plating_multiplier,
+        )
         add_step(11, 'Corrected lower limit for mutation rate, '
                      '&mu;<span style="position: relative;"><sub>&omega;</sub>'
                      '<sup style="position: absolute; left: 0;">&minus;</sup><span>',
@@ -278,7 +281,7 @@ def solve(v_total, selective: MediaDescription, complete: MediaDescription) -> P
     add_step(2, 'Mean of C<sub>com</sub>', complete.c, 'mean_c_com')
 
     n_total = complete.c * complete.d * v_total / complete.v
-    add_step(3, 'Total number of cells in culture, N<sub>tot</sub>', n_total, 'n_total')   # todo: add formula
+    add_step(3, 'Total number of cells in culture, N<sub>tot</sub>', n_total, 'n_total')
 
     logging.info('Raw results calculation')
     raw_results = calc_raw_results()
