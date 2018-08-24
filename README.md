@@ -1,6 +1,10 @@
 # [FluCalc](http://flucalc.ase.tufts.edu/)
 MSS-MLE (Ma-Sandri-Sarkar Maximum Likelihood Estimator) calculator for Luria–Delbrück fluctuation analysis.
 
+## Reference
+Radchenko et. al, 2017 (Methods in Molecular Biology).  
+DOI: 10.1007/978-1-4939-7306-4_29
+
 ## Installation
 1. Clone or [download](https://github.com/bondarevts/flucalc/archive/master.zip) source code.
 2. Install Python 3.4 or upper and libraries:
