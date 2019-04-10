@@ -17,7 +17,7 @@ from wtforms.fields import TextAreaField
 from . import flucalc
 from . import keys
 
-CALCULATION_TIMEOUT_SEC = 5
+CALCULATION_TIMEOUT_SEC = 60
 
 version = '2019.4.1'
 code_address = 'https://github.com/bondarevts/flucalc'
