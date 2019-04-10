@@ -130,17 +130,25 @@
                 </table>
             </div>
             {% if process %}
-                <div class="process-steps">
-                    <ul>
-                        {% for item in process %}
-                            <li class="step">
-                                <p>{{ item.description|safe }} = {{ '{:.4}'.format(item.value) }}</p>
-                                {% if item.img %}
-                                    <p><img src="{{ url_for('static', filename='imgs/' + item.img + '.svg') }}"/></p>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
+                <div class="spoiler">
+                    <input type="checkbox" id="spoilerid_1">
+                    <label for="spoilerid_1">
+                        Calculation steps
+                    </label>
+                    <div class="spoiler_body">
+                        <div class="process-steps">
+                            <ul>
+                                {% for item in process %}
+                                    <li class="step">
+                                        <p>{{ item.description|safe }} = {{ '{:.4}'.format(item.value) }}</p>
+                                        {% if item.img %}
+                                            <p><img src="{{ url_for('static', filename='imgs/' + item.img + '.svg') }}"/></p>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
         </div>

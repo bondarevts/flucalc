@@ -160,7 +160,6 @@ p.version {
 
 div.process-steps {
     margin: 0;
-    margin-top: 20px;
     background-color: #efefef;
 }
 
@@ -209,4 +208,51 @@ hr {
   margin-right: auto;
   border-style: inset;
   border-width: 1px;
+}
+
+.spoiler > input + label:after {
+  content: "(show)";
+  padding: 5px 0px;
+  font-size: 12px;
+  float: right;
+  margin-right: 5px;
+
+}
+
+.spoiler > input:checked + label:after {
+  content: "(hide)";
+  padding: 5px 0px;
+  font-size: 12px;
+  float: right;
+  margin-right: 5px;
+}
+
+.spoiler > input {
+  display: none;
+}
+
+.spoiler label {
+  padding: 5px;
+}
+
+.spoiler > input + label,
+.spoiler_body {
+  background: #CCC;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: block;
+}
+
+.spoiler > input + label + .spoiler_body {
+  display: none;
+}
+
+.spoiler > input:checked + label + .spoiler_body {
+  display: block;
+}
+
+.spoiler .spoiler_body {
+  background: #FFF;
+  border: 3px solid #CCC;
+  border-top: none;
 }
