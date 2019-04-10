@@ -14,6 +14,8 @@ from wtforms.fields import TextAreaField, SubmitField, FloatField
 from . import flucalc
 from . import keys
 
+CALCULATION_TIMEOUT_SEC = 5
+
 version = '2017.9.1'
 code_address = 'https://github.com/bondarevts/flucalc'
 new_issue_address = code_address + '/issues/new'
@@ -148,7 +150,7 @@ def main_page():
         complete = complete._replace(c=mean(complete.c))
 
         try:
-            result = run_parallel(solve, args=(v_total, selective, complete), timeout=5)
+            result = run_parallel(solve, args=(v_total, selective, complete), timeout=CALCULATION_TIMEOUT_SEC)
         except mp.TimeoutError:
             message = 'Calculation failed. Possible C<sub>sel</sub> too big.'
             logging.info(message)
