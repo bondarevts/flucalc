@@ -1,15 +1,18 @@
+import itertools
 import logging
 import math
 import multiprocessing as mp
 from collections import namedtuple
 from functools import partial
 from statistics import mean
-import itertools
 
 import flask
 from flask_wtf import Form
-from wtforms import validators, ValidationError
-from wtforms.fields import TextAreaField, SubmitField, FloatField
+from wtforms import ValidationError
+from wtforms import validators
+from wtforms.fields import FloatField
+from wtforms.fields import SubmitField
+from wtforms.fields import TextAreaField
 
 from . import flucalc
 from . import keys

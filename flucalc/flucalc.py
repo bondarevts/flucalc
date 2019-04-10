@@ -1,11 +1,10 @@
-import math
 import logging
+import math
 from collections import Counter
 from collections import namedtuple
 from statistics import median
 
 from scipy import optimize
-
 
 # All notations were taken from article [Foster, 2006]
 
