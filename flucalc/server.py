@@ -7,7 +7,7 @@ from functools import partial
 from statistics import mean
 
 import flask
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from wtforms import ValidationError
 from wtforms import validators
 from wtforms.fields import FloatField
@@ -90,7 +90,10 @@ class MultiFloatAreaField(TextAreaField):
         self.data = data
 
 
-class FluctuationInputForm(Form):
+class FluctuationInputForm(FlaskForm):
+    class Meta:
+        csrf = False
+
     v_total = FloatField('Volume of a culture <i>(&mu;l)</i>, V<sub>tot</sub>',
                          [volume_value], default=200)
     c_selective = MultiFloatAreaField('Observed numbers of clones, C<sub>sel</sub>',
@@ -118,7 +121,7 @@ class FluctuationInputForm(Form):
 @app.route('/', methods=['GET', 'POST'])
 def main_page():
     logging.info('Request from ip %s.', flask.request.remote_addr)
-    form = FluctuationInputForm(flask.request.form, csrf_enabled=False)
+    form = FluctuationInputForm(flask.request.form)
     render_page_template = partial(flask.render_template,
                                    'form_with_results.html',
                                    format_number_with_power=format_number_with_power,
