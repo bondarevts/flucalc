@@ -19,7 +19,7 @@ from . import keys
 
 CALCULATION_TIMEOUT_SEC = 5
 
-version = '2017.9.1'
+version = '2019.4.1'
 code_address = 'https://github.com/bondarevts/flucalc'
 new_issue_address = code_address + '/issues/new'
 
