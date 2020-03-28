@@ -19,7 +19,7 @@ def main():
                 port = int(arg)
 
     print('FluCalc started on http://{ip}:{port}'.format(ip=ip, port=port))
-    subprocess.run('gunicorn -w {workers_count} -b {ip}:{port} flucalc.server:app'.format(
+    subprocess.run('gunicorn -w {workers_count} -b {ip}:{port} flucalc:app'.format(
         workers_count=workers_count, ip=ip, port=port
     ), shell=True)
 
