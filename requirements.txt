@@ -4,7 +4,7 @@ Flask==1.1.1
 Flask-WTF==0.14.3
 gunicorn==20.0.4
 itsdangerous==1.1.0
-Jinja2==2.11.1
+Jinja2==2.11.3
 MarkupSafe==1.1.1
 mkl-fft==1.0.15
 mkl-service==2.3.0
