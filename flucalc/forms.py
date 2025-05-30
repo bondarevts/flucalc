@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from markupsafe import Markup
 from wtforms.fields import FloatField
 from wtforms.fields import SubmitField
 
@@ -13,16 +14,16 @@ class FluctuationInputForm(FlaskForm):
     class Meta:
         csrf = False
 
-    v_total = FloatField('Volume of a culture <i>(&mu;l)</i>, V<sub>tot</sub>', [volume_value], default=200)
+    v_total = FloatField(Markup('Volume of a culture <i>(&mu;l)</i>, V<sub>tot</sub>'), [volume_value], default=200)
 
-    c_selective = MultiFloatAreaField('Observed numbers of clones, C<sub>sel</sub>', [clones_numbers, int_values])
-    d_selective = FloatField('Dilution factor, D<sub>sel</sub>', [dilution_validator])
-    v_selective = FloatField('Volume plated <i>(&mu;l)</i>, V<sub>sel</sub>', [volume_value])
+    c_selective = MultiFloatAreaField(Markup('Observed numbers of clones, C<sub>sel</sub>'), [clones_numbers, int_values])
+    d_selective = FloatField(Markup('Dilution factor, D<sub>sel</sub>'), [dilution_validator])
+    v_selective = FloatField(Markup('Volume plated <i>(&mu;l)</i>, V<sub>sel</sub>'), [volume_value])
 
-    c_complete = MultiFloatAreaField('Observed numbers of clones, C<sub>com</sub>', [clones_numbers])
-    d_complete = FloatField('Dilution factor, D<sub>com</sub>', [dilution_validator])
-    v_complete = FloatField('Volume plated <i>(&mu;l)</i>, V<sub>com</sub>', [volume_value])
-
+    c_complete = MultiFloatAreaField(Markup('Observed numbers of clones, C<sub>com</sub>'), [clones_numbers])
+    d_complete = FloatField(Markup('Dilution factor, D<sub>com</sub>'), [dilution_validator])
+    v_complete = FloatField(Markup('Volume plated <i>(&mu;l)</i>, V<sub>com</sub>'), [volume_value])
+ 
     submit = SubmitField('Calculate')
 
     def __repr__(self):
